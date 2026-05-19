@@ -1,0 +1,1100 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+
+// Template Formats with Standard Dimensions
+const TEMPLATE_FORMATS = [
+  { id: 'instagram-portrait', name: 'Instagram Portrait', width: 1080, height: 1350, icon: 'fa-instagram' },
+  { id: 'youtube-thumbnail', name: 'YouTube Thumbnail', width: 1280, height: 720, icon: 'fa-youtube' },
+  { id: 'business-card', name: 'Business Card (Horizontal)', width: 1050, height: 600, icon: 'fa-address-card' },
+  { id: 'logo-design', name: 'Minimalist Logo', width: 800, height: 800, icon: 'fa-compass-drafting' },
+  { id: 'a4-document', name: 'A4 Document / Resume', width: 827, height: 1169, icon: 'fa-file-lines' },
+  { id: 'flyer-poster', name: 'Flyer / Poster', width: 1080, height: 1528, icon: 'fa-scroll' },
+  { id: 'custom-dimension', name: 'Custom Dimension', width: 1000, height: 1000, icon: 'fa-sliders' }
+];
+
+// Pre-Designed Starting Templates Library
+const PRE_DESIGNED_TEMPLATES = {
+  'instagram-portrait': [
+    {
+      name: 'Tech & AI Growth Hook',
+      bg: '#0B0F19',
+      layers: [
+        { id: 'glow1', type: 'circle', x: 200, y: 200, r: 350, fill: '#10B981', opacity: 0.1, blur: true },
+        { id: 'glow2', type: 'circle', x: 800, y: 1000, r: 350, fill: '#3B82F6', opacity: 0.08, blur: true },
+        { id: 'badge-bg', type: 'rect', x: 100, y: 180, w: 180, h: 48, rx: 8, fill: '#10B981', opacity: 0.15, stroke: '#10B981', strokeWidth: 1.5, hasShadow: true, shadowColor: '#10B981', shadowBlur: 20 },
+        { id: 'badge-txt', type: 'text', x: 190, y: 212, text: 'PRO TIPS', fontSize: 18, fontWeight: '800', fill: '#10B981', fontFamily: 'Inter', textAnchor: 'middle' },
+        { id: 'title1', type: 'text', x: 100, y: 360, text: '3 Tools You Are', fontSize: 72, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'League Spartan', hasShadow: true, shadowColor: '#000000', shadowBlur: 15 },
+        { id: 'title2', type: 'text', x: 100, y: 460, text: 'USING WRONG.', fontSize: 72, fontWeight: '900', fill: '#10B981', fontFamily: 'League Spartan', hasShadow: true, shadowColor: '#10B981', shadowBlur: 30 },
+        { id: 'desc', type: 'text', x: 100, y: 600, text: 'Stop wasting hours doing everything manually. Use these automated agents instead.', fontSize: 24, fontWeight: '400', fill: '#9CA3AF', fontFamily: 'Inter' },
+        { id: 'footer-line', type: 'line', x1: 100, y1: 1150, x2: 980, y2: 1150, stroke: '#1F2937', strokeWidth: 2 },
+        { id: 'handle', type: 'text', x: 100, y: 1210, text: '@aarav_tech', fontSize: 22, fontWeight: 'bold', fill: '#9CA3AF', fontFamily: 'Plus Jakarta Sans' },
+        { id: 'save', type: 'text', x: 980, y: 1210, text: 'SAVE POST ↗', fontSize: 20, fontWeight: '900', fill: '#10B981', fontFamily: 'Inter', textAnchor: 'end' }
+      ]
+    }
+  ],
+  'youtube-thumbnail': [
+    {
+      name: 'Dynamic Coding Masterclass',
+      bg: '#070A13',
+      layers: [
+        { id: 'glow', type: 'circle', x: 1100, y: 360, r: 400, fill: '#EF4444', opacity: 0.15, blur: true },
+        { id: 'accent-box', type: 'rect', x: 80, y: 180, w: 600, h: 360, rx: 20, fill: '#131B2E', stroke: '#3B82F6', strokeWidth: 4, opacity: 1, hasShadow: true, shadowColor: '#000000', shadowBlur: 20 },
+        { id: 'badge', type: 'rect', x: 120, y: 220, w: 160, h: 42, rx: 6, fill: '#EF4444', opacity: 1 },
+        { id: 'badge-txt', type: 'text', x: 200, y: 248, text: 'FREE COURSE', fontSize: 15, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'Inter', textAnchor: 'middle' },
+        { id: 'main-title', type: 'text', x: 120, y: 360, text: 'REACT JS IN', fontSize: 58, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'Archivo Black' },
+        { id: 'sub-title', type: 'text', x: 120, y: 450, text: '10 MINUTES!', fontSize: 58, fontWeight: '900', fill: '#3B82F6', fontFamily: 'Archivo Black', hasShadow: true, shadowColor: '#3B82F6', shadowBlur: 25 },
+        { id: 'caption', type: 'text', x: 120, y: 500, text: 'No experience required. Learn clean architecture.', fontSize: 18, fontWeight: '400', fill: '#9CA3AF', fontFamily: 'Inter' },
+        { id: 'mockup-rect', type: 'rect', x: 740, y: 180, w: 460, h: 360, rx: 16, fill: '#1E293B', stroke: '#334155', strokeWidth: 2, opacity: 1, hasShadow: true, shadowColor: '#000000', shadowBlur: 30 },
+        { id: 'mockup-text', type: 'text', x: 970, y: 370, text: '[ DRAG SCREENSHOT HERE ]', fontSize: 20, fontWeight: 'bold', fill: '#64748B', fontFamily: 'Space Grotesk', textAnchor: 'middle' }
+      ]
+    }
+  ]
+};
+
+const FONT_OPTIONS = [
+  'League Spartan', 'Archivo Black', 'Anton', 'Playfair Display', 
+  'Space Grotesk', 'Inter', 'Montserrat', 'Plus Jakarta Sans'
+];
+
+const THEMES = [
+  { name: 'Dark Neon', bg: '#09090B', text: '#FFFFFF', card: '#18181B', accent: '#00F5A0' },
+  { name: 'Royal Gold', bg: '#172A45', text: '#F8FAFC', card: '#0B132B', accent: '#F5A623' },
+  { name: 'Vaporwave', bg: '#10002B', text: '#E0AAFF', card: '#240046', accent: '#FF006E' },
+  { name: 'Latte Minimal', bg: '#F9F6F0', text: '#2D3748', card: '#FFFFFF', accent: '#D69E2E' },
+];
+
+export default function App() {
+  const [activeFormat, setActiveFormat] = useState(TEMPLATE_FORMATS[0]);
+  const [customWidth, setCustomWidth] = useState(1000);
+  const [customHeight, setCustomHeight] = useState(1000);
+  
+  const [canvasBg, setCanvasBg] = useState(PRE_DESIGNED_TEMPLATES['instagram-portrait'][0].bg);
+  const [layers, setLayers] = useState(PRE_DESIGNED_TEMPLATES['instagram-portrait'][0].layers);
+  
+  const [selectedLayerId, setSelectedLayerId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [zoomLevel, setZoomLevel] = useState(100);
+
+  const [notification, setNotification] = useState(null);
+  const svgRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // AI Integration States
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiThemePrompt, setAiThemePrompt] = useState("");
+  const [aiContentPrompt, setAiContentPrompt] = useState("");
+
+  useEffect(() => {
+    const linkId = 'google-fonts-link';
+    let link = document.getElementById(linkId);
+    if (!link) {
+      link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    const query = FONT_OPTIONS.map(f => `family=${f.replace(/ /g, '+')}:wght@400;500;600;700;800;900`).join('&');
+    link.href = `https://fonts.googleapis.com/css2?${query}&display=swap`;
+  }, []);
+
+  const handleFormatChange = (formatId) => {
+    const format = TEMPLATE_FORMATS.find(f => f.id === formatId);
+    setActiveFormat(format);
+    
+    if (formatId !== 'custom-dimension' && PRE_DESIGNED_TEMPLATES[formatId]) {
+      const template = PRE_DESIGNED_TEMPLATES[formatId][0];
+      setCanvasBg(template.bg);
+      setLayers([...template.layers]); 
+    } else {
+      setLayers([]);
+      setCanvasBg('#FFFFFF');
+    }
+    setSelectedLayerId(null);
+    setZoomLevel(100);
+  };
+
+  const showToast = (msg) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const currentWidth = activeFormat.id === 'custom-dimension' ? customWidth : activeFormat.width;
+  const currentHeight = activeFormat.id === 'custom-dimension' ? customHeight : activeFormat.height;
+
+  const getMouseCoords = (evt) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const CTM = svgRef.current.getScreenCTM();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    return {
+      x: (clientX - CTM.e) / CTM.a,
+      y: (clientY - CTM.f) / CTM.d
+    };
+  };
+
+  const handlePointerDown = (evt, layerId) => {
+    evt.stopPropagation();
+    setSelectedLayerId(layerId);
+    setIsDragging(true);
+    
+    const coords = getMouseCoords(evt);
+    const layer = layers.find(l => l.id === layerId);
+    
+    let ox = coords.x;
+    let oy = coords.y;
+    
+    if (layer.type === 'rect' || layer.type === 'text' || layer.type === 'image') {
+       ox = coords.x - layer.x;
+       oy = coords.y - layer.y;
+    } else if (layer.type === 'circle') {
+       ox = coords.x - layer.x; 
+       oy = coords.y - layer.y;
+    } else if (layer.type === 'line') {
+       ox = coords.x - layer.x1;
+       oy = coords.y - layer.y1;
+    }
+
+    setDragOffset({ x: ox, y: oy });
+  };
+
+  const handlePointerMove = (evt) => {
+    if (!isDragging || !selectedLayerId) return;
+    evt.preventDefault(); 
+
+    const coords = getMouseCoords(evt);
+    const newX = coords.x - dragOffset.x;
+    const newY = coords.y - dragOffset.y;
+
+    setLayers(prev => prev.map(layer => {
+      if (layer.id === selectedLayerId) {
+        if (layer.type === 'line') {
+           const dx = newX - layer.x1;
+           const dy = newY - layer.y1;
+           return { ...layer, x1: newX, y1: newY, x2: layer.x2 + dx, y2: layer.y2 + dy };
+        }
+        return { ...layer, x: newX, y: newY };
+      }
+      return layer;
+    }));
+  };
+
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleCanvasClick = (e) => {
+    if (e.target.id === 'main-svg-canvas' || e.target.id === 'canvas-bg-rect') {
+      setSelectedLayerId(null);
+    }
+  };
+
+  const generateId = () => `layer_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+  const addLayer = (type) => {
+    let newLayer = { 
+      id: generateId(), 
+      type, 
+      x: currentWidth / 2, 
+      y: currentHeight / 2, 
+      opacity: 1, 
+      hasShadow: false, 
+      shadowColor: '#000000',
+      shadowBlur: 15,
+      filter: 'none' 
+    };
+    
+    switch(type) {
+      case 'text':
+        newLayer = { 
+          ...newLayer, 
+          text: 'Double click to edit', 
+          fontSize: 48, 
+          fontWeight: 'bold', 
+          fill: '#FFFFFF', 
+          fontFamily: 'Inter', 
+          textAnchor: 'middle',
+          letterSpacing: 0,
+          stroke: 'none',
+          strokeWidth: 0
+        };
+        break;
+      case 'rect':
+        newLayer = { ...newLayer, x: currentWidth/2 - 100, y: currentHeight/2 - 100, w: 200, h: 200, rx: 0, fill: '#3B82F6', stroke: 'none', strokeWidth: 0 };
+        break;
+      case 'circle':
+        newLayer = { ...newLayer, r: 100, fill: '#10B981', stroke: 'none', strokeWidth: 0 };
+        break;
+      case 'line':
+        newLayer = { ...newLayer, x1: currentWidth/2 - 150, y1: currentHeight/2, x2: currentWidth/2 + 150, y2: currentHeight/2, stroke: '#FFFFFF', strokeWidth: 4 };
+        break;
+      default:
+        break;
+    }
+    
+    setLayers(prev => [...prev, newLayer]);
+    setSelectedLayerId(newLayer.id);
+  };
+
+  const updateSelectedLayer = (field, value) => {
+    if (!selectedLayerId) return;
+    setLayers(prev => prev.map(layer => 
+      layer.id === selectedLayerId ? { ...layer, [field]: value } : layer
+    ));
+  };
+
+  const deleteSelectedLayer = () => {
+    if (!selectedLayerId) return;
+    setLayers(prev => prev.filter(layer => layer.id !== selectedLayerId));
+    setSelectedLayerId(null);
+  };
+
+  const moveLayer = (direction) => {
+    if (!selectedLayerId) return;
+    const index = layers.findIndex(l => l.id === selectedLayerId);
+    if (index < 0) return;
+
+    const newLayers = [...layers];
+    if (direction === 'up' && index < newLayers.length - 1) {
+      [newLayers[index], newLayers[index + 1]] = [newLayers[index + 1], newLayers[index]];
+    } else if (direction === 'down' && index > 0) {
+      [newLayers[index], newLayers[index - 1]] = [newLayers[index - 1], newLayers[index]];
+    }
+    setLayers(newLayers);
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        const maxDimension = Math.min(currentWidth, currentHeight) * 0.8;
+        
+        if (w > maxDimension || h > maxDimension) {
+          const ratio = Math.min(maxDimension / w, maxDimension / h);
+          w = w * ratio;
+          h = h * ratio;
+        }
+
+        const newLayer = {
+          id: generateId(),
+          type: 'image',
+          src: event.target.result,
+          x: (currentWidth - w) / 2,
+          y: (currentHeight - h) / 2,
+          w: w,
+          h: h,
+          opacity: 1,
+          rx: 0,
+          hasShadow: false,
+          shadowColor: '#000000',
+          shadowBlur: 15,
+          filter: 'none'
+        };
+        setLayers(prev => [...prev, newLayer]);
+        setSelectedLayerId(newLayer.id);
+        
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const applyTheme = (theme) => {
+    setCanvasBg(theme.bg);
+    setLayers(prev => prev.map(layer => {
+      let updated = { ...layer };
+      if (layer.type === 'text') {
+        if (layer.fill === '#FFFFFF' || layer.fill === '#000000' || layer.fill === canvasBg) {
+           updated.fill = theme.text;
+        } else {
+           updated.fill = theme.accent;
+        }
+      } else if (layer.type === 'rect' || layer.type === 'circle') {
+        if (layer.fill !== 'none') {
+          updated.fill = (Math.random() > 0.5) ? theme.card : theme.accent;
+        }
+      }
+      return updated;
+    }));
+    showToast(`${theme.name} theme applied!`);
+  };
+
+  // Internal Helper to call Gemini API
+  const callGeminiAPI = async (payload) => {
+    const apiKey = ""; // Left empty as per environment rules
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+    
+    let retries = 3;
+    let delay = 1000;
+
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Network response was not ok");
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+        }
+    }
+  };
+
+  const handleAiThemeGeneration = async () => {
+    if (!aiThemePrompt.trim()) return;
+    setIsAiLoading(true);
+    try {
+        const payload = {
+            contents: [{ parts: [{ text: `Act as an expert designer. Generate a gorgeous, highly contrasting color palette for a social media post about: "${aiThemePrompt}". The text color MUST be highly visible against the background.` }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        name: { type: "STRING", description: "Creative name for this palette" },
+                        bg: { type: "STRING", description: "Background hex color" },
+                        text: { type: "STRING", description: "Primary text hex color (must contrast sharply with bg)" },
+                        card: { type: "STRING", description: "Secondary box/card hex color" },
+                        accent: { type: "STRING", description: "Vibrant accent hex color for buttons/highlights" }
+                    },
+                    required: ["name", "bg", "text", "card", "accent"]
+                }
+            }
+        };
+        const result = await callGeminiAPI(payload);
+        const theme = JSON.parse(result.candidates[0].content.parts[0].text);
+        applyTheme(theme);
+    } catch (e) {
+        showToast("AI Theme generation failed.");
+    } finally {
+        setIsAiLoading(false);
+    }
+  };
+
+  const handleAiContentGeneration = async () => {
+    if (!aiContentPrompt.trim()) return;
+    setIsAiLoading(true);
+    try {
+        const payload = {
+            contents: [{ parts: [{ text: `Act as a viral copywriter. Write a short, punchy social media post about: "${aiContentPrompt}". Provide a catchy main heading and a descriptive subheading.` }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        heading: { type: "STRING", description: "Punchy short headline (max 5 words)" },
+                        subheading: { type: "STRING", description: "Engaging subtitle or body text (1-2 sentences)" }
+                    },
+                    required: ["heading", "subheading"]
+                }
+            }
+        };
+        const result = await callGeminiAPI(payload);
+        const content = JSON.parse(result.candidates[0].content.parts[0].text);
+        
+        // Add Header
+        const headerLayer = {
+            id: generateId(), type: 'text', x: currentWidth / 2, y: currentHeight / 2 - 60, opacity: 1, hasShadow: true, shadowColor: '#000000', shadowBlur: 15, filter: 'none',
+            text: content.heading.toUpperCase(), fontSize: 72, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'League Spartan', textAnchor: 'middle', letterSpacing: 0, stroke: 'none', strokeWidth: 0
+        };
+        // Add Subheader
+        const subHeaderLayer = {
+            id: generateId(), type: 'text', x: currentWidth / 2, y: currentHeight / 2 + 40, opacity: 1, hasShadow: false, filter: 'none',
+            text: content.subheading, fontSize: 24, fontWeight: '400', fill: '#A3A3A3', fontFamily: 'Inter', textAnchor: 'middle', letterSpacing: 0, stroke: 'none', strokeWidth: 0
+        };
+        
+        setLayers(prev => [...prev, headerLayer, subHeaderLayer]);
+        setSelectedLayerId(headerLayer.id);
+        showToast("AI Generated Text added to canvas!");
+        setAiContentPrompt("");
+    } catch (e) {
+        showToast("AI Content generation failed.");
+    } finally {
+        setIsAiLoading(false);
+    }
+  };
+
+  const handleAiRewriteText = async (styleInstruction) => {
+    if (!selectedLayerId) return;
+    const layer = layers.find(l => l.id === selectedLayerId);
+    if (layer.type !== 'text' || !layer.text.trim()) return;
+
+    setIsAiLoading(true);
+    try {
+        const payload = {
+            contents: [{ parts: [{ text: `Rewrite the following text to make it ${styleInstruction}. Do not include quotation marks or extra conversation in your response, just the rewritten text:\n\n${layer.text}` }] }]
+        };
+        const result = await callGeminiAPI(payload);
+        let newText = result.candidates[0].content.parts[0].text.trim();
+        // Clean up accidental quotes from model
+        if (newText.startsWith('"') && newText.endsWith('"')) {
+            newText = newText.slice(1, -1);
+        }
+        updateSelectedLayer('text', newText);
+        showToast("Text rewritten successfully!");
+    } catch (e) {
+        showToast("AI Text Rewrite failed.");
+    } finally {
+        setIsAiLoading(false);
+    }
+  };
+
+  const downloadCanvasAsPNG = () => {
+    showToast("Generating high-res PNG...");
+    const cachedSelected = selectedLayerId;
+    setSelectedLayerId(null);
+
+    setTimeout(() => {
+      const svgElement = document.getElementById('main-svg-canvas');
+      if (!svgElement) return;
+
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+      
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = currentWidth;
+        canvas.height = currentHeight;
+        const context = canvas.getContext('2d');
+        
+        context.fillStyle = canvasBg;
+        context.fillRect(0, 0, currentWidth, currentHeight);
+        context.drawImage(image, 0, 0, currentWidth, currentHeight);
+        
+        const pngURL = canvas.toDataURL('image/png', 1.0);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngURL;
+        downloadLink.download = `Studio-Export-${Date.now()}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        setSelectedLayerId(cachedSelected);
+        showToast("Export Complete!");
+      };
+      image.src = blobURL;
+    }, 100);
+  };
+
+  const selectedLayer = layers.find(l => l.id === selectedLayerId);
+
+  return (
+    <div className="flex flex-col h-screen w-full bg-[#050505] text-slate-200 font-['Inter'] overflow-hidden">
+      
+      {/* Loading Overlay */}
+      {isAiLoading && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-slate-900 border border-indigo-500/50 p-6 rounded-2xl shadow-2xl flex flex-col items-center">
+                <i className="fa-solid fa-wand-magic-sparkles text-3xl text-indigo-400 mb-4 animate-pulse"></i>
+                <span className="text-sm font-bold bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent animate-pulse">
+                    Gemini AI is working...
+                </span>
+            </div>
+        </div>
+      )}
+
+      {/* Top Navbar */}
+      <header className="h-14 bg-[#0A0A0A] border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-20">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center shadow-lg">
+            <i className="fa-solid fa-pen-nib text-white text-sm"></i>
+          </div>
+          <span className="font-extrabold text-sm tracking-widest text-white">MEGA STUDIO + AI</span>
+        </div>
+
+        <div className="flex items-center space-x-4">
+           <div className="flex items-center space-x-2 bg-slate-900 rounded-lg p-1 border border-slate-800">
+             <button onClick={() => setZoomLevel(z => Math.max(20, z - 10))} className="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400"><i className="fa-solid fa-minus text-[10px]"></i></button>
+             <span className="text-[10px] font-bold w-10 text-center">{zoomLevel}%</span>
+             <button onClick={() => setZoomLevel(z => Math.min(200, z + 10))} className="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400"><i className="fa-solid fa-plus text-[10px]"></i></button>
+           </div>
+
+          <button 
+            onClick={downloadCanvasAsPNG}
+            className="bg-white text-black hover:bg-slate-200 px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-[0_0_15px_rgba(255,255,255,0.2)] flex items-center space-x-2"
+          >
+            <i className="fa-solid fa-download"></i>
+            <span>Export PNG</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Main Studio Workspace */}
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* Left Sidebar - Settings & Tools */}
+        <aside className="w-[340px] bg-[#0A0A0A] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+          
+          {/* Format Selector */}
+          <div className="p-4 border-b border-slate-800">
+            <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">Canvas Format</span>
+            <div className="grid grid-cols-2 gap-2">
+              {TEMPLATE_FORMATS.map(fmt => (
+                <button
+                  key={fmt.id}
+                  onClick={() => handleFormatChange(fmt.id)}
+                  className={`p-2 rounded-lg border text-left flex flex-col space-y-1 transition ${activeFormat.id === fmt.id ? 'bg-blue-600/10 border-blue-500' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
+                >
+                  <div className="flex items-center space-x-1.5 text-slate-300">
+                    <i className={`fa-brands ${fmt.icon} text-xs ${activeFormat.id === fmt.id ? 'text-blue-400' : ''}`}></i>
+                    <span className="text-[10px] font-bold truncate">{fmt.name}</span>
+                  </div>
+                  <span className="text-[9px] text-slate-500">{fmt.width} x {fmt.height} px</span>
+                </button>
+              ))}
+            </div>
+
+            {activeFormat.id === 'custom-dimension' && (
+              <div className="flex space-x-2 mt-3 p-3 bg-slate-900 rounded-lg border border-slate-800">
+                <div>
+                  <label className="text-[9px] text-slate-400 block mb-1">Width (px)</label>
+                  <input type="number" value={customWidth} onChange={(e) => setCustomWidth(parseInt(e.target.value) || 100)} className="w-full bg-black border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+                </div>
+                <div>
+                  <label className="text-[9px] text-slate-400 block mb-1">Height (px)</label>
+                  <input type="number" value={customHeight} onChange={(e) => setCustomHeight(parseInt(e.target.value) || 100)} className="w-full bg-black border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {}
+          {/* Gemini AI Studio Panel */}
+          <div className="p-4 border-b border-slate-800 bg-gradient-to-b from-[#1E1B4B]/30 to-transparent">
+            <span className="text-[10px] font-extrabold tracking-widest text-indigo-400 uppercase block mb-3 flex items-center">
+                <i className="fa-solid fa-wand-magic-sparkles mr-2"></i> 🤖 AI Magic Studio
+            </span>
+            
+            {/* Theme Generator */}
+            <div className="mb-4">
+                <label className="text-[9px] text-slate-300 block mb-1">Generate Brand Theme</label>
+                <div className="flex space-x-2">
+                    <input 
+                        type="text" 
+                        placeholder="e.g. Cyberpunk Neon" 
+                        value={aiThemePrompt}
+                        onChange={(e) => setAiThemePrompt(e.target.value)}
+                        className="flex-1 bg-black border border-slate-700 rounded-lg px-2 text-xs text-white focus:border-indigo-500"
+                    />
+                    <button 
+                        onClick={handleAiThemeGeneration}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
+
+            {/* Post Layout Content Generator */}
+            <div>
+                <label className="text-[9px] text-slate-300 block mb-1">Generate Text Elements</label>
+                <div className="flex space-x-2">
+                    <input 
+                        type="text" 
+                        placeholder="e.g. Tips for good sleep" 
+                        value={aiContentPrompt}
+                        onChange={(e) => setAiContentPrompt(e.target.value)}
+                        className="flex-1 bg-black border border-slate-700 rounded-lg px-2 text-xs text-white focus:border-indigo-500"
+                    />
+                    <button 
+                        onClick={handleAiContentGeneration}
+                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                    >
+                        Generate
+                    </button>
+                </div>
+            </div>
+          </div>
+
+          {/* Add Elements Section */}
+          <div className="p-4 border-b border-slate-800">
+            <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">Add Elements</span>
+            
+            <div className="mb-3">
+              <input 
+                type="file" 
+                accept="image/png, image/jpeg, image/webp" 
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden" 
+              />
+              <button 
+                onClick={() => fileInputRef.current.click()}
+                className="w-full bg-gradient-to-r from-emerald-600/20 to-teal-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 border border-emerald-500/30 text-emerald-400 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition"
+              >
+                <i className="fa-solid fa-cloud-arrow-up"></i>
+                <span>Upload Image / PNG</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => addLayer('text')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
+                <i className="fa-solid fa-font"></i> <span>Text</span>
+              </button>
+              <button onClick={() => addLayer('rect')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
+                <i className="fa-regular fa-square"></i> <span>Shape</span>
+              </button>
+              <button onClick={() => addLayer('circle')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
+                <i className="fa-regular fa-circle"></i> <span>Circle</span>
+              </button>
+              <button onClick={() => addLayer('line')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
+                <i className="fa-solid fa-minus"></i> <span>Line</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Themes */}
+          <div className="p-4 border-b border-slate-800">
+             <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">1-Click Themes</span>
+             <div className="flex space-x-2 overflow-x-auto pb-1">
+               {THEMES.map((theme, i) => (
+                 <button key={i} onClick={() => applyTheme(theme)} className="shrink-0 flex items-center space-x-1 bg-slate-900 border border-slate-800 p-1.5 rounded-lg hover:border-slate-500">
+                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: theme.bg}}></span>
+                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: theme.accent}}></span>
+                    <span className="text-[9px] font-bold text-slate-300 ml-1">{theme.name}</span>
+                 </button>
+               ))}
+             </div>
+          </div>
+
+          {/* Selected Layer Properties Editor */}
+          <div className="p-4 flex-1">
+            {selectedLayer ? (
+              <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">Edit {selectedLayer.type}</span>
+                  <div className="flex space-x-1">
+                    <button onClick={() => moveLayer('up')} className="w-6 h-6 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex items-center justify-center" title="Bring Forward"><i className="fa-solid fa-arrow-up text-[10px]"></i></button>
+                    <button onClick={() => moveLayer('down')} className="w-6 h-6 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex items-center justify-center" title="Send Backward"><i className="fa-solid fa-arrow-down text-[10px]"></i></button>
+                    <button onClick={deleteSelectedLayer} className="w-6 h-6 bg-red-900/40 hover:bg-red-800/60 text-red-400 rounded flex items-center justify-center ml-2" title="Delete"><i className="fa-solid fa-trash text-[10px]"></i></button>
+                  </div>
+                </div>
+
+                {/* AI Text Layer Controls */}
+                {selectedLayer.type === 'text' && (
+                    <div className="bg-indigo-950/30 border border-indigo-500/30 p-3 rounded-xl mb-3">
+                        <span className="text-[9px] font-bold tracking-wider text-indigo-300 uppercase block mb-2">✨ Contextual AI Edits</span>
+                        <div className="flex space-x-2">
+                            <button onClick={() => handleAiRewriteText("more catchy and engaging for social media")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] py-1.5 rounded font-bold transition">Make Catchy</button>
+                            <button onClick={() => handleAiRewriteText("shorter and more punchy")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] py-1.5 rounded font-bold transition">Make Shorter</button>
+                        </div>
+                        <button onClick={() => handleAiRewriteText("with corrected grammar and spelling only")} className="w-full mt-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-[10px] py-1.5 rounded font-bold transition">Fix Grammar</button>
+                    </div>
+                )}
+
+                {/* Common Position Properties */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] text-slate-400 block mb-1">X Position</label>
+                    <input type="number" value={Math.round(selectedLayer.x || selectedLayer.x1 || 0)} onChange={(e) => updateSelectedLayer(selectedLayer.type === 'line' ? 'x1' : 'x', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-slate-400 block mb-1">Y Position</label>
+                    <input type="number" value={Math.round(selectedLayer.y || selectedLayer.y1 || 0)} onChange={(e) => updateSelectedLayer(selectedLayer.type === 'line' ? 'y1' : 'y', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                  </div>
+                </div>
+
+                {/* ADVANCED SHADOW & GLOW */}
+                <div className="space-y-3 bg-slate-900 p-3 rounded-lg border border-slate-800">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[9px] text-slate-400">Opacity (Transparent)</label>
+                      <span className="text-[9px] text-slate-300">{Math.round((selectedLayer.opacity || 1) * 100)}%</span>
+                    </div>
+                    <input 
+                      type="range" min="0.1" max="1" step="0.05" 
+                      value={selectedLayer.opacity || 1} 
+                      onChange={(e) => updateSelectedLayer('opacity', parseFloat(e.target.value))} 
+                      className="w-full accent-blue-500" 
+                    />
+                  </div>
+                  
+                  <div className="pt-2 border-t border-slate-800">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <input 
+                        type="checkbox" 
+                        id="shadow-toggle"
+                        checked={selectedLayer.hasShadow || false}
+                        onChange={(e) => updateSelectedLayer('hasShadow', e.target.checked)}
+                        className="w-3.5 h-3.5 rounded bg-black border-slate-700 accent-blue-500"
+                      />
+                      <label htmlFor="shadow-toggle" className="text-[10px] text-slate-300 font-bold cursor-pointer">Enable Drop Shadow / Glow</label>
+                    </div>
+                    
+                    {selectedLayer.hasShadow && (
+                      <div className="grid grid-cols-2 gap-3 mt-3 p-2 bg-black/40 rounded border border-slate-800">
+                        <div>
+                          <label className="text-[9px] text-slate-400 block mb-1">Shadow Color</label>
+                          <div className="flex bg-black border border-slate-700 rounded p-1">
+                            <input type="color" value={selectedLayer.shadowColor || '#000000'} onChange={(e) => updateSelectedLayer('shadowColor', e.target.value)} className="w-full h-6 border-0 bg-transparent rounded cursor-pointer" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-400 block mb-1">Blur / Spread</label>
+                          <input type="range" min="0" max="100" value={selectedLayer.shadowBlur || 15} onChange={(e) => updateSelectedLayer('shadowBlur', parseInt(e.target.value))} className="w-full accent-blue-500 mt-1" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Image Specific Properties */}
+                {selectedLayer.type === 'image' && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Width</label>
+                        <input type="number" value={Math.round(selectedLayer.w)} onChange={(e) => updateSelectedLayer('w', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Height</label>
+                        <input type="number" value={Math.round(selectedLayer.h)} onChange={(e) => updateSelectedLayer('h', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1">Corner Rounding (rx)</label>
+                      <input type="range" min="0" max={Math.min(selectedLayer.w, selectedLayer.h) / 2} value={selectedLayer.rx || 0} onChange={(e) => updateSelectedLayer('rx', parseInt(e.target.value))} className="w-full accent-blue-500" />
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1">Image Filter Effects</label>
+                      <select 
+                        value={selectedLayer.filter || 'none'} 
+                        onChange={(e) => updateSelectedLayer('filter', e.target.value)}
+                        className="w-full bg-black border border-slate-800 rounded p-1.5 text-xs text-white"
+                      >
+                        <option value="none">Normal (None)</option>
+                        <option value="grayscale(100%)">Black & White</option>
+                        <option value="sepia(80%)">Vintage Sepia</option>
+                        <option value="contrast(150%) saturate(150%)">Vibrant & High Contrast</option>
+                        <option value="invert(100%)">Color Invert</option>
+                        <option value="blur(4px)">Soft Blur</option>
+                        <option value="hue-rotate(90deg)">Hue Rotate (Neon)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Text Specific Properties */}
+                {selectedLayer.type === 'text' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[9px] text-slate-400 block mb-1">Text Content</label>
+                      <textarea value={selectedLayer.text} onChange={(e) => updateSelectedLayer('text', e.target.value)} rows={3} className="w-full bg-black border border-slate-800 rounded p-2 text-xs" />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Text Color</label>
+                        <div className="flex bg-black border border-slate-800 rounded p-1">
+                          <input type="color" value={selectedLayer.fill} onChange={(e) => updateSelectedLayer('fill', e.target.value)} className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Font Size</label>
+                        <input type="number" value={selectedLayer.fontSize} onChange={(e) => updateSelectedLayer('fontSize', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1.5 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Font Family</label>
+                        <select value={selectedLayer.fontFamily} onChange={(e) => updateSelectedLayer('fontFamily', e.target.value)} className="w-full bg-black border border-slate-800 rounded p-1 text-[10px]">
+                          {FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Alignment</label>
+                        <div className="flex bg-black border border-slate-800 rounded">
+                           <button onClick={() => updateSelectedLayer('textAnchor', 'start')} className={`flex-1 p-1 text-[10px] ${selectedLayer.textAnchor === 'start' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}><i className="fa-solid fa-align-left"></i></button>
+                           <button onClick={() => updateSelectedLayer('textAnchor', 'middle')} className={`flex-1 p-1 text-[10px] border-l border-r border-slate-800 ${selectedLayer.textAnchor === 'middle' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}><i className="fa-solid fa-align-center"></i></button>
+                           <button onClick={() => updateSelectedLayer('textAnchor', 'end')} className={`flex-1 p-1 text-[10px] ${selectedLayer.textAnchor === 'end' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}><i className="fa-solid fa-align-right"></i></button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 p-2 bg-slate-900 border border-slate-800 rounded-lg">
+                      <div className="col-span-2">
+                        <span className="text-[9px] font-bold text-slate-300 block mb-2 uppercase border-b border-slate-800 pb-1">Text Outline (Stroke)</span>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Outline Color</label>
+                        <div className="flex bg-black border border-slate-700 rounded p-1">
+                          <input type="color" value={selectedLayer.stroke === 'none' ? '#000000' : selectedLayer.stroke} onChange={(e) => updateSelectedLayer('stroke', e.target.value)} className="w-full h-5 border-0 bg-transparent rounded cursor-pointer" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Outline Thickness</label>
+                        <input type="number" min="0" max="20" value={selectedLayer.strokeWidth || 0} onChange={(e) => updateSelectedLayer('strokeWidth', parseInt(e.target.value))} className="w-full bg-black border border-slate-700 rounded px-2 py-1 text-xs" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between">
+                         <label className="text-[9px] text-slate-400 block mb-1">Letter Spacing</label>
+                         <span className="text-[9px] text-slate-300">{selectedLayer.letterSpacing || 0}px</span>
+                      </div>
+                      <input type="range" min="-10" max="50" value={selectedLayer.letterSpacing || 0} onChange={(e) => updateSelectedLayer('letterSpacing', parseInt(e.target.value))} className="w-full accent-blue-500" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Shape Properties (Rect, Circle) */}
+                {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle') && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Fill Color</label>
+                        <div className="flex bg-black border border-slate-800 rounded p-1">
+                          <input type="color" value={selectedLayer.fill === 'none' ? '#000000' : selectedLayer.fill} onChange={(e) => updateSelectedLayer('fill', e.target.value)} className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Stroke (Border)</label>
+                        <div className="flex bg-black border border-slate-800 rounded p-1">
+                          <input type="color" value={selectedLayer.stroke === 'none' ? '#000000' : selectedLayer.stroke} onChange={(e) => updateSelectedLayer('stroke', e.target.value)} className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedLayer.type === 'rect' && (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[9px] text-slate-400 block mb-1">Width</label>
+                          <input type="number" value={selectedLayer.w} onChange={(e) => updateSelectedLayer('w', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-400 block mb-1">Height</label>
+                          <input type="number" value={selectedLayer.h} onChange={(e) => updateSelectedLayer('h', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-400 block mb-1">Round (rx)</label>
+                          <input type="number" value={selectedLayer.rx || 0} onChange={(e) => updateSelectedLayer('rx', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedLayer.type === 'circle' && (
+                      <div>
+                        <label className="text-[9px] text-slate-400 block mb-1">Radius (r)</label>
+                        <input type="number" value={selectedLayer.r} onChange={(e) => updateSelectedLayer('r', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+              </div>
+            ) : (
+              <div className="animate-[fadeIn_0.2s_ease-out]">
+                <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">Global Canvas</span>
+                <label className="text-[9px] text-slate-400 block mb-1">Background Color</label>
+                <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded p-2">
+                  <input type="color" value={canvasBg} onChange={(e) => setCanvasBg(e.target.value)} className="w-8 h-8 border-0 bg-transparent rounded cursor-pointer" />
+                  <span className="text-xs font-mono text-slate-300 uppercase">{canvasBg}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-4 leading-relaxed">
+                  Click any element on the canvas to edit its properties, or use the <strong>AI Magic Studio</strong> above to let Gemini do the heavy lifting!
+                </p>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Central Canvas Workspace */}
+        <main className="flex-1 bg-[#121212] relative overflow-auto flex items-center justify-center relative p-8">
+          
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+
+          <div 
+            className="relative shadow-2xl transition-transform duration-100 ease-out flex-shrink-0"
+            style={{ 
+              width: `${currentWidth}px`, 
+              height: `${currentHeight}px`,
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: 'center center'
+            }}
+          >
+            <svg
+              id="main-svg-canvas"
+              ref={svgRef}
+              viewBox={`0 0 ${currentWidth} ${currentHeight}`}
+              className="w-full h-full overflow-visible select-none touch-none"
+              xmlns="http://www.w3.org/2000/svg"
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              onClick={handleCanvasClick}
+            >
+              <rect id="canvas-bg-rect" width={currentWidth} height={currentHeight} fill={canvasBg} />
+
+              {layers.map(layer => {
+                const isSelected = layer.id === selectedLayerId;
+                const layerOpacity = layer.opacity !== undefined ? layer.opacity : 1;
+                
+                // Advanced Filter Combination Logic (Supports CSS Drop-Shadow for vibrant Glows)
+                const shadowFilter = layer.hasShadow ? `drop-shadow(0px 8px ${layer.shadowBlur !== undefined ? layer.shadowBlur : 15}px ${layer.shadowColor || 'rgba(0,0,0,0.6)'})` : '';
+                const imgFilter = layer.filter && layer.filter !== 'none' ? layer.filter : '';
+                const combinedFilter = `${shadowFilter} ${imgFilter}`.trim() || 'none';
+                
+                const sharedStyle = {
+                  cursor: isSelected ? 'grabbing' : 'grab',
+                  opacity: layerOpacity,
+                  filter: combinedFilter
+                };
+
+                let element = null;
+
+                if (layer.type === 'image') {
+                   const clipId = `clip_${layer.id}`;
+                   element = (
+                     <g 
+                       transform={`translate(${layer.x}, ${layer.y})`} 
+                       onPointerDown={(e) => handlePointerDown(e, layer.id)}
+                       style={sharedStyle}
+                     >
+                       <defs>
+                         <clipPath id={clipId}>
+                           <rect width={layer.w} height={layer.h} rx={layer.rx || 0} />
+                         </clipPath>
+                       </defs>
+                       <image 
+                         href={layer.src} 
+                         width={layer.w} 
+                         height={layer.h} 
+                         clipPath={`url(#${clipId})`}
+                         preserveAspectRatio="xMidYMid slice"
+                       />
+                       {isSelected && (
+                         <rect width={layer.w} height={layer.h} rx={layer.rx || 0} fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="8 4" />
+                       )}
+                     </g>
+                   );
+                }
+                else if (layer.type === 'rect') {
+                  element = (
+                    <g transform={`translate(${layer.x}, ${layer.y})`} onPointerDown={(e) => handlePointerDown(e, layer.id)}>
+                      <rect
+                        width={layer.w} height={layer.h} rx={layer.rx || 0}
+                        fill={layer.fill} stroke={layer.stroke} strokeWidth={layer.strokeWidth || 0}
+                        style={sharedStyle}
+                      />
+                      {isSelected && <rect width={layer.w} height={layer.h} rx={layer.rx || 0} fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="8 4" />}
+                    </g>
+                  );
+                } 
+                else if (layer.type === 'circle') {
+                  element = (
+                    <g transform={`translate(${layer.x}, ${layer.y})`} onPointerDown={(e) => handlePointerDown(e, layer.id)}>
+                      <circle
+                        cx={0} cy={0} r={layer.r}
+                        fill={layer.fill} stroke={layer.stroke} strokeWidth={layer.strokeWidth || 0}
+                        style={{...sharedStyle, filter: layer.blur ? `blur(80px) ${shadowFilter}` : combinedFilter}}
+                      />
+                      {isSelected && <circle cx={0} cy={0} r={layer.r + 4} fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="8 4" />}
+                    </g>
+                  );
+                }
+                else if (layer.type === 'line') {
+                  element = (
+                    <g onPointerDown={(e) => handlePointerDown(e, layer.id)}>
+                      <line x1={layer.x1} y1={layer.y1} x2={layer.x2} y2={layer.y2} stroke="transparent" strokeWidth="20" style={{cursor: 'grab'}} />
+                      <line
+                        x1={layer.x1} y1={layer.y1} x2={layer.x2} y2={layer.y2}
+                        stroke={layer.stroke} strokeWidth={layer.strokeWidth}
+                        style={sharedStyle}
+                      />
+                      {isSelected && (
+                         <line x1={layer.x1} y1={layer.y1} x2={layer.x2} y2={layer.y2} stroke="#3B82F6" strokeWidth={layer.strokeWidth + 4} strokeDasharray="8 4" opacity="0.5" />
+                      )}
+                    </g>
+                  );
+                }
+                else if (layer.type === 'text') {
+                  // Standard splitting by newline for basic multi-line support
+                  const lines = layer.text.split('\n');
+                  element = (
+                    <g transform={`translate(${layer.x}, ${layer.y})`} onPointerDown={(e) => handlePointerDown(e, layer.id)}>
+                      <text
+                        x={0} y={0}
+                        fill={layer.fill}
+                        fontSize={layer.fontSize}
+                        fontFamily={layer.fontFamily}
+                        fontWeight={layer.fontWeight || 'normal'}
+                        textAnchor={layer.textAnchor || 'start'}
+                        letterSpacing={layer.letterSpacing || 0}
+                        stroke={layer.stroke === 'none' ? null : layer.stroke}
+                        strokeWidth={layer.strokeWidth || 0}
+                        strokeLinejoin="round"
+                        style={{
+                          ...sharedStyle, 
+                          userSelect: 'none',
+                          dominantBaseline: 'hanging'
+                        }}
+                      >
+                         {lines.map((line, i) => (
+                             <tspan key={i} x={0} dy={i === 0 ? 0 : layer.fontSize * 1.2}>{line}</tspan>
+                         ))}
+                      </text>
+                      {isSelected && (
+                        <rect 
+                          x={layer.textAnchor === 'middle' ? -(layer.text.length * layer.fontSize * 0.3) : (layer.textAnchor === 'end' ? -(layer.text.length * layer.fontSize * 0.6) : -5)} 
+                          y={-5} 
+                          width={(layer.text.length * layer.fontSize * 0.6) + 10} 
+                          height={(lines.length * layer.fontSize * 1.2) + 10} 
+                          fill="none" stroke="#3B82F6" strokeWidth="3" strokeDasharray="6 4" opacity="0.8" 
+                        />
+                      )}
+                    </g>
+                  );
+                }
+                
+                return <React.Fragment key={layer.id}>{element}</React.Fragment>;
+              })}
+            </svg>
+          </div>
+        </main>
+      </div>
+
+      {/* Floating Notification */}
+      {notification && (
+        <div className="fixed bottom-6 right-6 bg-slate-900 border border-slate-700 text-white py-3 px-6 rounded-xl shadow-2xl flex items-center space-x-3 z-50 animate-[fadeIn_0.2s_ease-out]">
+          <i className="fa-solid fa-circle-check text-emerald-400"></i>
+          <span className="text-xs font-bold">{notification}</span>
+        </div>
+      )}
+
+      {/* Custom Styles Injection */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #0A0A0A;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #334155;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #475569;
+        }
+      `}} />
+
+    </div>
+  );
+}
