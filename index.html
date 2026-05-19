@@ -1,1100 +1,918 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mega Studio + AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;700;800;900&family=Archivo+Black&family=Anton&family=Playfair+Display:wght@400;700;900&family=Space+Grotesk:wght@400;700&family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050505;--panel:#0A0A0A;--panel2:#111111;--border:#1e293b;
+  --text:#e2e8f0;--muted:#64748b;--accent:#3b82f6;--green:#10b981;
+  --red:#ef4444;--purple:#a855f7;--indigo:#6366f1;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px}
+button{cursor:pointer;border:none;background:none;color:inherit;font-family:inherit;font-size:inherit}
+input,select,textarea{font-family:inherit;color:inherit;background:#000;border:1px solid var(--border);border-radius:5px;outline:none;color:var(--text)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:#1e293b}
+label{font-size:9px;color:var(--muted);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
 
-// Template Formats with Standard Dimensions
-const TEMPLATE_FORMATS = [
-  { id: 'instagram-portrait', name: 'Instagram Portrait', width: 1080, height: 1350, icon: 'fa-instagram' },
-  { id: 'youtube-thumbnail', name: 'YouTube Thumbnail', width: 1280, height: 720, icon: 'fa-youtube' },
-  { id: 'business-card', name: 'Business Card (Horizontal)', width: 1050, height: 600, icon: 'fa-address-card' },
-  { id: 'logo-design', name: 'Minimalist Logo', width: 800, height: 800, icon: 'fa-compass-drafting' },
-  { id: 'a4-document', name: 'A4 Document / Resume', width: 827, height: 1169, icon: 'fa-file-lines' },
-  { id: 'flyer-poster', name: 'Flyer / Poster', width: 1080, height: 1528, icon: 'fa-scroll' },
-  { id: 'custom-dimension', name: 'Custom Dimension', width: 1000, height: 1000, icon: 'fa-sliders' }
-];
+/* Layout */
+#app{display:flex;flex-direction:column;height:100vh}
 
-// Pre-Designed Starting Templates Library
-const PRE_DESIGNED_TEMPLATES = {
-  'instagram-portrait': [
-    {
-      name: 'Tech & AI Growth Hook',
-      bg: '#0B0F19',
-      layers: [
-        { id: 'glow1', type: 'circle', x: 200, y: 200, r: 350, fill: '#10B981', opacity: 0.1, blur: true },
-        { id: 'glow2', type: 'circle', x: 800, y: 1000, r: 350, fill: '#3B82F6', opacity: 0.08, blur: true },
-        { id: 'badge-bg', type: 'rect', x: 100, y: 180, w: 180, h: 48, rx: 8, fill: '#10B981', opacity: 0.15, stroke: '#10B981', strokeWidth: 1.5, hasShadow: true, shadowColor: '#10B981', shadowBlur: 20 },
-        { id: 'badge-txt', type: 'text', x: 190, y: 212, text: 'PRO TIPS', fontSize: 18, fontWeight: '800', fill: '#10B981', fontFamily: 'Inter', textAnchor: 'middle' },
-        { id: 'title1', type: 'text', x: 100, y: 360, text: '3 Tools You Are', fontSize: 72, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'League Spartan', hasShadow: true, shadowColor: '#000000', shadowBlur: 15 },
-        { id: 'title2', type: 'text', x: 100, y: 460, text: 'USING WRONG.', fontSize: 72, fontWeight: '900', fill: '#10B981', fontFamily: 'League Spartan', hasShadow: true, shadowColor: '#10B981', shadowBlur: 30 },
-        { id: 'desc', type: 'text', x: 100, y: 600, text: 'Stop wasting hours doing everything manually. Use these automated agents instead.', fontSize: 24, fontWeight: '400', fill: '#9CA3AF', fontFamily: 'Inter' },
-        { id: 'footer-line', type: 'line', x1: 100, y1: 1150, x2: 980, y2: 1150, stroke: '#1F2937', strokeWidth: 2 },
-        { id: 'handle', type: 'text', x: 100, y: 1210, text: '@aarav_tech', fontSize: 22, fontWeight: 'bold', fill: '#9CA3AF', fontFamily: 'Plus Jakarta Sans' },
-        { id: 'save', type: 'text', x: 980, y: 1210, text: 'SAVE POST ↗', fontSize: 20, fontWeight: '900', fill: '#10B981', fontFamily: 'Inter', textAnchor: 'end' }
-      ]
-    }
-  ],
-  'youtube-thumbnail': [
-    {
-      name: 'Dynamic Coding Masterclass',
-      bg: '#070A13',
-      layers: [
-        { id: 'glow', type: 'circle', x: 1100, y: 360, r: 400, fill: '#EF4444', opacity: 0.15, blur: true },
-        { id: 'accent-box', type: 'rect', x: 80, y: 180, w: 600, h: 360, rx: 20, fill: '#131B2E', stroke: '#3B82F6', strokeWidth: 4, opacity: 1, hasShadow: true, shadowColor: '#000000', shadowBlur: 20 },
-        { id: 'badge', type: 'rect', x: 120, y: 220, w: 160, h: 42, rx: 6, fill: '#EF4444', opacity: 1 },
-        { id: 'badge-txt', type: 'text', x: 200, y: 248, text: 'FREE COURSE', fontSize: 15, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'Inter', textAnchor: 'middle' },
-        { id: 'main-title', type: 'text', x: 120, y: 360, text: 'REACT JS IN', fontSize: 58, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'Archivo Black' },
-        { id: 'sub-title', type: 'text', x: 120, y: 450, text: '10 MINUTES!', fontSize: 58, fontWeight: '900', fill: '#3B82F6', fontFamily: 'Archivo Black', hasShadow: true, shadowColor: '#3B82F6', shadowBlur: 25 },
-        { id: 'caption', type: 'text', x: 120, y: 500, text: 'No experience required. Learn clean architecture.', fontSize: 18, fontWeight: '400', fill: '#9CA3AF', fontFamily: 'Inter' },
-        { id: 'mockup-rect', type: 'rect', x: 740, y: 180, w: 460, h: 360, rx: 16, fill: '#1E293B', stroke: '#334155', strokeWidth: 2, opacity: 1, hasShadow: true, shadowColor: '#000000', shadowBlur: 30 },
-        { id: 'mockup-text', type: 'text', x: 970, y: 370, text: '[ DRAG SCREENSHOT HERE ]', fontSize: 20, fontWeight: 'bold', fill: '#64748B', fontFamily: 'Space Grotesk', textAnchor: 'middle' }
-      ]
-    }
-  ]
-};
+/* Header */
+header{height:52px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;z-index:20}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#3b82f6);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon i{font-size:12px;color:#fff}
+.logo-name{font-size:12px;font-weight:800;letter-spacing:2px;color:#fff}
+.header-right{display:flex;align-items:center;gap:12px}
+.zoom-ctrl{display:flex;align-items:center;gap:4px;background:#111;border:1px solid var(--border);border-radius:7px;padding:3px}
+.zoom-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--muted);font-size:9px;transition:.15s}
+.zoom-btn:hover{background:#334155;color:#fff}
+.zoom-val{font-size:10px;font-weight:700;width:36px;text-align:center}
+.btn-export{background:#fff;color:#000;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 0 14px rgba(255,255,255,.15);transition:.15s}
+.btn-export:hover{background:#e2e8f0}
 
-const FONT_OPTIONS = [
-  'League Spartan', 'Archivo Black', 'Anton', 'Playfair Display', 
-  'Space Grotesk', 'Inter', 'Montserrat', 'Plus Jakarta Sans'
-];
+/* Workspace */
+.workspace{display:flex;flex:1;overflow:hidden}
 
-const THEMES = [
-  { name: 'Dark Neon', bg: '#09090B', text: '#FFFFFF', card: '#18181B', accent: '#00F5A0' },
-  { name: 'Royal Gold', bg: '#172A45', text: '#F8FAFC', card: '#0B132B', accent: '#F5A623' },
-  { name: 'Vaporwave', bg: '#10002B', text: '#E0AAFF', card: '#240046', accent: '#FF006E' },
-  { name: 'Latte Minimal', bg: '#F9F6F0', text: '#2D3748', card: '#FFFFFF', accent: '#D69E2E' },
-];
+/* Left Sidebar */
+aside{width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+aside::-webkit-scrollbar{width:4px}
+aside::-webkit-scrollbar-track{background:#0a0a0a}
+aside::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
+aside::-webkit-scrollbar-thumb:hover{background:#475569}
 
-export default function App() {
-  const [activeFormat, setActiveFormat] = useState(TEMPLATE_FORMATS[0]);
-  const [customWidth, setCustomWidth] = useState(1000);
-  const [customHeight, setCustomHeight] = useState(1000);
-  
-  const [canvasBg, setCanvasBg] = useState(PRE_DESIGNED_TEMPLATES['instagram-portrait'][0].bg);
-  const [layers, setLayers] = useState(PRE_DESIGNED_TEMPLATES['instagram-portrait'][0].layers);
-  
-  const [selectedLayerId, setSelectedLayerId] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [zoomLevel, setZoomLevel] = useState(100);
+.section{padding:14px;border-bottom:1px solid var(--border)}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.sec-title.ai{color:#818cf8}
 
-  const [notification, setNotification] = useState(null);
-  const svgRef = useRef(null);
-  const fileInputRef = useRef(null);
+/* Format Grid */
+.fmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fmt-btn{padding:8px;border-radius:8px;border:1px solid var(--border);background:#111;text-align:left;transition:.15s;display:flex;flex-direction:column;gap:3px}
+.fmt-btn.active{border-color:var(--accent);background:rgba(59,130,246,.08)}
+.fmt-btn:hover:not(.active){border-color:#334155}
+.fmt-btn .fmt-name{font-size:10px;font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:5px}
+.fmt-btn .fmt-dim{font-size:9px;color:var(--muted)}
+.fmt-btn.active .fmt-name i{color:var(--accent)}
+.custom-dims{display:flex;gap:8px;margin-top:10px;padding:10px;background:#111;border:1px solid var(--border);border-radius:8px}
+.custom-dims .field{flex:1}
+.custom-dims input{width:100%;padding:4px 8px;font-size:11px;border-radius:5px}
 
-  // AI Integration States
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiThemePrompt, setAiThemePrompt] = useState("");
-  const [aiContentPrompt, setAiContentPrompt] = useState("");
+/* AI Section */
+.ai-section{background:linear-gradient(180deg,rgba(30,27,75,.35) 0%,transparent 100%);border-bottom:1px solid var(--border);padding:14px}
+.ai-row{margin-bottom:10px}
+.ai-row:last-child{margin-bottom:0}
+.ai-row label{color:#a5b4fc;margin-bottom:5px}
+.ai-input-row{display:flex;gap:6px}
+.ai-input-row input{flex:1;padding:5px 8px;font-size:11px;background:#000;border-color:#334155;border-radius:7px}
+.ai-input-row input:focus{border-color:#6366f1}
+.btn-ai{padding:5px 12px;border-radius:7px;font-size:11px;font-weight:700;color:#fff;transition:.15s;white-space:nowrap}
+.btn-ai.indigo{background:#4f46e5}.btn-ai.indigo:hover{background:#4338ca}
+.btn-ai.fuchsia{background:#a21caf}.btn-ai.fuchsia:hover{background:#86198f}
 
-  useEffect(() => {
-    const linkId = 'google-fonts-link';
-    let link = document.getElementById(linkId);
-    if (!link) {
-      link = document.createElement('link');
-      link.id = linkId;
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    }
-    const query = FONT_OPTIONS.map(f => `family=${f.replace(/ /g, '+')}:wght@400;500;600;700;800;900`).join('&');
-    link.href = `https://fonts.googleapis.com/css2?${query}&display=swap`;
-  }, []);
+/* Add Elements */
+.upload-btn{width:100%;background:linear-gradient(90deg,rgba(5,150,105,.15),rgba(15,118,110,.15));border:1px solid rgba(16,185,129,.25);color:var(--green);padding:7px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;transition:.15s}
+.upload-btn:hover{background:linear-gradient(90deg,rgba(5,150,105,.25),rgba(15,118,110,.25))}
+.elem-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.elem-btn{background:#111;border:1px solid var(--border);padding:7px;border-radius:8px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+.elem-btn:hover{background:#1e293b;border-color:#334155}
 
-  const handleFormatChange = (formatId) => {
-    const format = TEMPLATE_FORMATS.find(f => f.id === formatId);
-    setActiveFormat(format);
-    
-    if (formatId !== 'custom-dimension' && PRE_DESIGNED_TEMPLATES[formatId]) {
-      const template = PRE_DESIGNED_TEMPLATES[formatId][0];
-      setCanvasBg(template.bg);
-      setLayers([...template.layers]); 
-    } else {
-      setLayers([]);
-      setCanvasBg('#FFFFFF');
-    }
-    setSelectedLayerId(null);
-    setZoomLevel(100);
-  };
+/* Themes */
+.theme-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.theme-row::-webkit-scrollbar{height:3px}
+.theme-row::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.theme-chip{flex-shrink:0;display:flex;align-items:center;gap:4px;background:#111;border:1px solid var(--border);padding:5px 8px;border-radius:8px;font-size:9px;font-weight:700;color:#cbd5e1;transition:.15s;cursor:pointer}
+.theme-chip:hover{border-color:#475569}
+.theme-dot{width:10px;height:10px;border-radius:50%}
 
-  const showToast = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
-  };
+/* Properties Panel */
+.props-panel{padding:14px;flex:1}
+.props-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.props-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.prop-actions{display:flex;gap:4px}
+.icon-btn{width:24px;height:24px;border-radius:5px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;transition:.15s}
+.icon-btn:hover{background:#334155;color:#fff}
+.icon-btn.del{background:rgba(127,29,29,.4);color:#f87171}
+.icon-btn.del:hover{background:rgba(127,29,29,.7)}
+.field-group{display:grid;gap:8px;margin-bottom:10px}
+.field-group.cols2{grid-template-columns:1fr 1fr}
+.field-group.cols3{grid-template-columns:1fr 1fr 1fr}
+.field-group .field input,.field-group .field select,.field-group .field textarea{width:100%;padding:5px 8px;font-size:11px}
+.field-group .field textarea{resize:none}
+.color-pick{display:flex;align-items:center;background:#000;border:1px solid var(--border);border-radius:5px;padding:4px}
+.color-pick input[type=color]{width:100%;height:20px;border:none;background:transparent;cursor:pointer;padding:0}
+.range-wrap{display:flex;flex-direction:column;gap:4px}
+.range-label{display:flex;justify-content:space-between;align-items:center}
+.range-label span:last-child{font-size:9px;color:#cbd5e1}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.card-box{background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px}
+.card-box .sub-title{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:8px}
+.align-btns{display:flex;background:#000;border:1px solid var(--border);border-radius:5px;overflow:hidden}
+.align-btn{flex:1;padding:5px;font-size:11px;color:var(--muted);transition:.15s;border-right:1px solid var(--border)}
+.align-btn:last-child{border-right:none}
+.align-btn.active{background:#334155;color:#fff}
+.align-btn:hover:not(.active){background:#1e293b}
+.ai-text-box{background:rgba(30,27,75,.3);border:1px solid rgba(99,102,241,.3);border-radius:10px;padding:10px;margin-bottom:10px}
+.ai-text-title{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#a5b4fc;margin-bottom:8px}
+.ai-rewrite-btns{display:flex;gap:6px;margin-bottom:6px}
+.ai-rw-btn{flex:1;background:#4f46e5;color:#fff;font-size:10px;font-weight:700;padding:5px;border-radius:5px;transition:.15s}
+.ai-rw-btn:hover{background:#4338ca}
+.ai-rw-btn.secondary{background:#1e293b;border:1px solid #334155;color:#cbd5e1}
+.ai-rw-btn.secondary:hover{background:#334155}
+.no-select-msg{font-size:10px;color:var(--muted);line-height:1.6;margin-top:8px}
+.no-select-msg strong{color:#94a3b8}
+.bg-field{display:flex;align-items:center;gap:8px;background:#111;border:1px solid var(--border);border-radius:7px;padding:7px}
+.bg-field input[type=color]{width:32px;height:32px;border:none;background:transparent;cursor:pointer;border-radius:5px}
+.bg-field .hex-val{font-size:11px;font-family:monospace;text-transform:uppercase;color:#cbd5e1}
 
-  const currentWidth = activeFormat.id === 'custom-dimension' ? customWidth : activeFormat.width;
-  const currentHeight = activeFormat.id === 'custom-dimension' ? customHeight : activeFormat.height;
+/* Canvas */
+main{flex:1;background:#121212;position:relative;overflow:auto;display:flex;align-items:center;justify-content:center;padding:40px}
+.dot-grid{position:absolute;inset:0;opacity:.08;pointer-events:none;background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:24px 24px}
+.canvas-wrap{position:relative;flex-shrink:0;box-shadow:0 25px 60px rgba(0,0,0,.8);transition:transform .1s}
+.canvas-wrap svg{display:block;overflow:visible;user-select:none;touch-action:none}
 
-  const getMouseCoords = (evt) => {
-    if (!svgRef.current) return { x: 0, y: 0 };
-    const CTM = svgRef.current.getScreenCTM();
-    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-    return {
-      x: (clientX - CTM.e) / CTM.a,
-      y: (clientY - CTM.f) / CTM.d
-    };
-  };
+/* Toast */
+#toast{position:fixed;bottom:20px;right:20px;background:#0f172a;border:1px solid #334155;color:#fff;padding:10px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.6);display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;z-index:100;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast i{color:var(--green);font-size:13px}
 
-  const handlePointerDown = (evt, layerId) => {
-    evt.stopPropagation();
-    setSelectedLayerId(layerId);
-    setIsDragging(true);
-    
-    const coords = getMouseCoords(evt);
-    const layer = layers.find(l => l.id === layerId);
-    
-    let ox = coords.x;
-    let oy = coords.y;
-    
-    if (layer.type === 'rect' || layer.type === 'text' || layer.type === 'image') {
-       ox = coords.x - layer.x;
-       oy = coords.y - layer.y;
-    } else if (layer.type === 'circle') {
-       ox = coords.x - layer.x; 
-       oy = coords.y - layer.y;
-    } else if (layer.type === 'line') {
-       ox = coords.x - layer.x1;
-       oy = coords.y - layer.y1;
-    }
+/* AI Loading overlay */
+#ai-overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
+#ai-overlay.show{display:flex}
+.ai-loader{background:#0f172a;border:1px solid rgba(99,102,241,.4);padding:24px 32px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.ai-loader i{font-size:28px;color:#818cf8;animation:pulse 1.2s ease-in-out infinite}
+.ai-loader span{font-size:12px;font-weight:700;background:linear-gradient(90deg,#818cf8,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
 
-    setDragOffset({ x: ox, y: oy });
-  };
+<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon"><i class="fa-solid fa-pen-nib"></i></div>
+      <span class="logo-name">MEGA STUDIO + AI</span>
+    </div>
+    <div class="header-right">
+      <div class="zoom-ctrl">
+        <button class="zoom-btn" onclick="zoom(-10)"><i class="fa-solid fa-minus"></i></button>
+        <span class="zoom-val" id="zoom-val">100%</span>
+        <button class="zoom-btn" onclick="zoom(+10)"><i class="fa-solid fa-plus"></i></button>
+      </div>
+      <button class="btn-export" onclick="exportPNG()"><i class="fa-solid fa-download"></i> Export PNG</button>
+    </div>
+  </header>
 
-  const handlePointerMove = (evt) => {
-    if (!isDragging || !selectedLayerId) return;
-    evt.preventDefault(); 
+  <div class="workspace">
+    <!-- LEFT SIDEBAR -->
+    <aside>
 
-    const coords = getMouseCoords(evt);
-    const newX = coords.x - dragOffset.x;
-    const newY = coords.y - dragOffset.y;
-
-    setLayers(prev => prev.map(layer => {
-      if (layer.id === selectedLayerId) {
-        if (layer.type === 'line') {
-           const dx = newX - layer.x1;
-           const dy = newY - layer.y1;
-           return { ...layer, x1: newX, y1: newY, x2: layer.x2 + dx, y2: layer.y2 + dy };
-        }
-        return { ...layer, x: newX, y: newY };
-      }
-      return layer;
-    }));
-  };
-
-  const handlePointerUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleCanvasClick = (e) => {
-    if (e.target.id === 'main-svg-canvas' || e.target.id === 'canvas-bg-rect') {
-      setSelectedLayerId(null);
-    }
-  };
-
-  const generateId = () => `layer_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-  const addLayer = (type) => {
-    let newLayer = { 
-      id: generateId(), 
-      type, 
-      x: currentWidth / 2, 
-      y: currentHeight / 2, 
-      opacity: 1, 
-      hasShadow: false, 
-      shadowColor: '#000000',
-      shadowBlur: 15,
-      filter: 'none' 
-    };
-    
-    switch(type) {
-      case 'text':
-        newLayer = { 
-          ...newLayer, 
-          text: 'Double click to edit', 
-          fontSize: 48, 
-          fontWeight: 'bold', 
-          fill: '#FFFFFF', 
-          fontFamily: 'Inter', 
-          textAnchor: 'middle',
-          letterSpacing: 0,
-          stroke: 'none',
-          strokeWidth: 0
-        };
-        break;
-      case 'rect':
-        newLayer = { ...newLayer, x: currentWidth/2 - 100, y: currentHeight/2 - 100, w: 200, h: 200, rx: 0, fill: '#3B82F6', stroke: 'none', strokeWidth: 0 };
-        break;
-      case 'circle':
-        newLayer = { ...newLayer, r: 100, fill: '#10B981', stroke: 'none', strokeWidth: 0 };
-        break;
-      case 'line':
-        newLayer = { ...newLayer, x1: currentWidth/2 - 150, y1: currentHeight/2, x2: currentWidth/2 + 150, y2: currentHeight/2, stroke: '#FFFFFF', strokeWidth: 4 };
-        break;
-      default:
-        break;
-    }
-    
-    setLayers(prev => [...prev, newLayer]);
-    setSelectedLayerId(newLayer.id);
-  };
-
-  const updateSelectedLayer = (field, value) => {
-    if (!selectedLayerId) return;
-    setLayers(prev => prev.map(layer => 
-      layer.id === selectedLayerId ? { ...layer, [field]: value } : layer
-    ));
-  };
-
-  const deleteSelectedLayer = () => {
-    if (!selectedLayerId) return;
-    setLayers(prev => prev.filter(layer => layer.id !== selectedLayerId));
-    setSelectedLayerId(null);
-  };
-
-  const moveLayer = (direction) => {
-    if (!selectedLayerId) return;
-    const index = layers.findIndex(l => l.id === selectedLayerId);
-    if (index < 0) return;
-
-    const newLayers = [...layers];
-    if (direction === 'up' && index < newLayers.length - 1) {
-      [newLayers[index], newLayers[index + 1]] = [newLayers[index + 1], newLayers[index]];
-    } else if (direction === 'down' && index > 0) {
-      [newLayers[index], newLayers[index - 1]] = [newLayers[index - 1], newLayers[index]];
-    }
-    setLayers(newLayers);
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width;
-        let h = img.height;
-        const maxDimension = Math.min(currentWidth, currentHeight) * 0.8;
-        
-        if (w > maxDimension || h > maxDimension) {
-          const ratio = Math.min(maxDimension / w, maxDimension / h);
-          w = w * ratio;
-          h = h * ratio;
-        }
-
-        const newLayer = {
-          id: generateId(),
-          type: 'image',
-          src: event.target.result,
-          x: (currentWidth - w) / 2,
-          y: (currentHeight - h) / 2,
-          w: w,
-          h: h,
-          opacity: 1,
-          rx: 0,
-          hasShadow: false,
-          shadowColor: '#000000',
-          shadowBlur: 15,
-          filter: 'none'
-        };
-        setLayers(prev => [...prev, newLayer]);
-        setSelectedLayerId(newLayer.id);
-        
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const applyTheme = (theme) => {
-    setCanvasBg(theme.bg);
-    setLayers(prev => prev.map(layer => {
-      let updated = { ...layer };
-      if (layer.type === 'text') {
-        if (layer.fill === '#FFFFFF' || layer.fill === '#000000' || layer.fill === canvasBg) {
-           updated.fill = theme.text;
-        } else {
-           updated.fill = theme.accent;
-        }
-      } else if (layer.type === 'rect' || layer.type === 'circle') {
-        if (layer.fill !== 'none') {
-          updated.fill = (Math.random() > 0.5) ? theme.card : theme.accent;
-        }
-      }
-      return updated;
-    }));
-    showToast(`${theme.name} theme applied!`);
-  };
-
-  // Internal Helper to call Gemini API
-  const callGeminiAPI = async (payload) => {
-    const apiKey = ""; // Left empty as per environment rules
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-    
-    let retries = 3;
-    let delay = 1000;
-
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) throw new Error("Network response was not ok");
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, delay));
-            delay *= 2;
-        }
-    }
-  };
-
-  const handleAiThemeGeneration = async () => {
-    if (!aiThemePrompt.trim()) return;
-    setIsAiLoading(true);
-    try {
-        const payload = {
-            contents: [{ parts: [{ text: `Act as an expert designer. Generate a gorgeous, highly contrasting color palette for a social media post about: "${aiThemePrompt}". The text color MUST be highly visible against the background.` }] }],
-            generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        name: { type: "STRING", description: "Creative name for this palette" },
-                        bg: { type: "STRING", description: "Background hex color" },
-                        text: { type: "STRING", description: "Primary text hex color (must contrast sharply with bg)" },
-                        card: { type: "STRING", description: "Secondary box/card hex color" },
-                        accent: { type: "STRING", description: "Vibrant accent hex color for buttons/highlights" }
-                    },
-                    required: ["name", "bg", "text", "card", "accent"]
-                }
-            }
-        };
-        const result = await callGeminiAPI(payload);
-        const theme = JSON.parse(result.candidates[0].content.parts[0].text);
-        applyTheme(theme);
-    } catch (e) {
-        showToast("AI Theme generation failed.");
-    } finally {
-        setIsAiLoading(false);
-    }
-  };
-
-  const handleAiContentGeneration = async () => {
-    if (!aiContentPrompt.trim()) return;
-    setIsAiLoading(true);
-    try {
-        const payload = {
-            contents: [{ parts: [{ text: `Act as a viral copywriter. Write a short, punchy social media post about: "${aiContentPrompt}". Provide a catchy main heading and a descriptive subheading.` }] }],
-            generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        heading: { type: "STRING", description: "Punchy short headline (max 5 words)" },
-                        subheading: { type: "STRING", description: "Engaging subtitle or body text (1-2 sentences)" }
-                    },
-                    required: ["heading", "subheading"]
-                }
-            }
-        };
-        const result = await callGeminiAPI(payload);
-        const content = JSON.parse(result.candidates[0].content.parts[0].text);
-        
-        // Add Header
-        const headerLayer = {
-            id: generateId(), type: 'text', x: currentWidth / 2, y: currentHeight / 2 - 60, opacity: 1, hasShadow: true, shadowColor: '#000000', shadowBlur: 15, filter: 'none',
-            text: content.heading.toUpperCase(), fontSize: 72, fontWeight: '900', fill: '#FFFFFF', fontFamily: 'League Spartan', textAnchor: 'middle', letterSpacing: 0, stroke: 'none', strokeWidth: 0
-        };
-        // Add Subheader
-        const subHeaderLayer = {
-            id: generateId(), type: 'text', x: currentWidth / 2, y: currentHeight / 2 + 40, opacity: 1, hasShadow: false, filter: 'none',
-            text: content.subheading, fontSize: 24, fontWeight: '400', fill: '#A3A3A3', fontFamily: 'Inter', textAnchor: 'middle', letterSpacing: 0, stroke: 'none', strokeWidth: 0
-        };
-        
-        setLayers(prev => [...prev, headerLayer, subHeaderLayer]);
-        setSelectedLayerId(headerLayer.id);
-        showToast("AI Generated Text added to canvas!");
-        setAiContentPrompt("");
-    } catch (e) {
-        showToast("AI Content generation failed.");
-    } finally {
-        setIsAiLoading(false);
-    }
-  };
-
-  const handleAiRewriteText = async (styleInstruction) => {
-    if (!selectedLayerId) return;
-    const layer = layers.find(l => l.id === selectedLayerId);
-    if (layer.type !== 'text' || !layer.text.trim()) return;
-
-    setIsAiLoading(true);
-    try {
-        const payload = {
-            contents: [{ parts: [{ text: `Rewrite the following text to make it ${styleInstruction}. Do not include quotation marks or extra conversation in your response, just the rewritten text:\n\n${layer.text}` }] }]
-        };
-        const result = await callGeminiAPI(payload);
-        let newText = result.candidates[0].content.parts[0].text.trim();
-        // Clean up accidental quotes from model
-        if (newText.startsWith('"') && newText.endsWith('"')) {
-            newText = newText.slice(1, -1);
-        }
-        updateSelectedLayer('text', newText);
-        showToast("Text rewritten successfully!");
-    } catch (e) {
-        showToast("AI Text Rewrite failed.");
-    } finally {
-        setIsAiLoading(false);
-    }
-  };
-
-  const downloadCanvasAsPNG = () => {
-    showToast("Generating high-res PNG...");
-    const cachedSelected = selectedLayerId;
-    setSelectedLayerId(null);
-
-    setTimeout(() => {
-      const svgElement = document.getElementById('main-svg-canvas');
-      if (!svgElement) return;
-
-      const svgString = new XMLSerializer().serializeToString(svgElement);
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const URL = window.URL || window.webkitURL || window;
-      const blobURL = URL.createObjectURL(svgBlob);
-      
-      const image = new Image();
-      image.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = currentWidth;
-        canvas.height = currentHeight;
-        const context = canvas.getContext('2d');
-        
-        context.fillStyle = canvasBg;
-        context.fillRect(0, 0, currentWidth, currentHeight);
-        context.drawImage(image, 0, 0, currentWidth, currentHeight);
-        
-        const pngURL = canvas.toDataURL('image/png', 1.0);
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pngURL;
-        downloadLink.download = `Studio-Export-${Date.now()}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        
-        setSelectedLayerId(cachedSelected);
-        showToast("Export Complete!");
-      };
-      image.src = blobURL;
-    }, 100);
-  };
-
-  const selectedLayer = layers.find(l => l.id === selectedLayerId);
-
-  return (
-    <div className="flex flex-col h-screen w-full bg-[#050505] text-slate-200 font-['Inter'] overflow-hidden">
-      
-      {/* Loading Overlay */}
-      {isAiLoading && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-            <div className="bg-slate-900 border border-indigo-500/50 p-6 rounded-2xl shadow-2xl flex flex-col items-center">
-                <i className="fa-solid fa-wand-magic-sparkles text-3xl text-indigo-400 mb-4 animate-pulse"></i>
-                <span className="text-sm font-bold bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent animate-pulse">
-                    Gemini AI is working...
-                </span>
-            </div>
+      <!-- FORMAT -->
+      <div class="section">
+        <div class="sec-title">Canvas Format</div>
+        <div class="fmt-grid" id="fmt-grid"></div>
+        <div class="custom-dims" id="custom-dims" style="display:none">
+          <div class="field"><label>Width (px)</label><input type="number" id="cust-w" value="1000" oninput="setCustomDim()"/></div>
+          <div class="field"><label>Height (px)</label><input type="number" id="cust-h" value="1000" oninput="setCustomDim()"/></div>
         </div>
-      )}
-
-      {/* Top Navbar */}
-      <header className="h-14 bg-[#0A0A0A] border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-20">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center shadow-lg">
-            <i className="fa-solid fa-pen-nib text-white text-sm"></i>
-          </div>
-          <span className="font-extrabold text-sm tracking-widest text-white">MEGA STUDIO + AI</span>
-        </div>
-
-        <div className="flex items-center space-x-4">
-           <div className="flex items-center space-x-2 bg-slate-900 rounded-lg p-1 border border-slate-800">
-             <button onClick={() => setZoomLevel(z => Math.max(20, z - 10))} className="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400"><i className="fa-solid fa-minus text-[10px]"></i></button>
-             <span className="text-[10px] font-bold w-10 text-center">{zoomLevel}%</span>
-             <button onClick={() => setZoomLevel(z => Math.min(200, z + 10))} className="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400"><i className="fa-solid fa-plus text-[10px]"></i></button>
-           </div>
-
-          <button 
-            onClick={downloadCanvasAsPNG}
-            className="bg-white text-black hover:bg-slate-200 px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-[0_0_15px_rgba(255,255,255,0.2)] flex items-center space-x-2"
-          >
-            <i className="fa-solid fa-download"></i>
-            <span>Export PNG</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Studio Workspace */}
-      <div className="flex flex-1 overflow-hidden">
-        
-        {/* Left Sidebar - Settings & Tools */}
-        <aside className="w-[340px] bg-[#0A0A0A] border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
-          
-          {/* Format Selector */}
-          <div className="p-4 border-b border-slate-800">
-            <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">Canvas Format</span>
-            <div className="grid grid-cols-2 gap-2">
-              {TEMPLATE_FORMATS.map(fmt => (
-                <button
-                  key={fmt.id}
-                  onClick={() => handleFormatChange(fmt.id)}
-                  className={`p-2 rounded-lg border text-left flex flex-col space-y-1 transition ${activeFormat.id === fmt.id ? 'bg-blue-600/10 border-blue-500' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
-                >
-                  <div className="flex items-center space-x-1.5 text-slate-300">
-                    <i className={`fa-brands ${fmt.icon} text-xs ${activeFormat.id === fmt.id ? 'text-blue-400' : ''}`}></i>
-                    <span className="text-[10px] font-bold truncate">{fmt.name}</span>
-                  </div>
-                  <span className="text-[9px] text-slate-500">{fmt.width} x {fmt.height} px</span>
-                </button>
-              ))}
-            </div>
-
-            {activeFormat.id === 'custom-dimension' && (
-              <div className="flex space-x-2 mt-3 p-3 bg-slate-900 rounded-lg border border-slate-800">
-                <div>
-                  <label className="text-[9px] text-slate-400 block mb-1">Width (px)</label>
-                  <input type="number" value={customWidth} onChange={(e) => setCustomWidth(parseInt(e.target.value) || 100)} className="w-full bg-black border border-slate-700 rounded px-2 py-1 text-xs text-white" />
-                </div>
-                <div>
-                  <label className="text-[9px] text-slate-400 block mb-1">Height (px)</label>
-                  <input type="number" value={customHeight} onChange={(e) => setCustomHeight(parseInt(e.target.value) || 100)} className="w-full bg-black border border-slate-700 rounded px-2 py-1 text-xs text-white" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {}
-          {/* Gemini AI Studio Panel */}
-          <div className="p-4 border-b border-slate-800 bg-gradient-to-b from-[#1E1B4B]/30 to-transparent">
-            <span className="text-[10px] font-extrabold tracking-widest text-indigo-400 uppercase block mb-3 flex items-center">
-                <i className="fa-solid fa-wand-magic-sparkles mr-2"></i> 🤖 AI Magic Studio
-            </span>
-            
-            {/* Theme Generator */}
-            <div className="mb-4">
-                <label className="text-[9px] text-slate-300 block mb-1">Generate Brand Theme</label>
-                <div className="flex space-x-2">
-                    <input 
-                        type="text" 
-                        placeholder="e.g. Cyberpunk Neon" 
-                        value={aiThemePrompt}
-                        onChange={(e) => setAiThemePrompt(e.target.value)}
-                        className="flex-1 bg-black border border-slate-700 rounded-lg px-2 text-xs text-white focus:border-indigo-500"
-                    />
-                    <button 
-                        onClick={handleAiThemeGeneration}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
-                    >
-                        Apply
-                    </button>
-                </div>
-            </div>
-
-            {/* Post Layout Content Generator */}
-            <div>
-                <label className="text-[9px] text-slate-300 block mb-1">Generate Text Elements</label>
-                <div className="flex space-x-2">
-                    <input 
-                        type="text" 
-                        placeholder="e.g. Tips for good sleep" 
-                        value={aiContentPrompt}
-                        onChange={(e) => setAiContentPrompt(e.target.value)}
-                        className="flex-1 bg-black border border-slate-700 rounded-lg px-2 text-xs text-white focus:border-indigo-500"
-                    />
-                    <button 
-                        onClick={handleAiContentGeneration}
-                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
-                    >
-                        Generate
-                    </button>
-                </div>
-            </div>
-          </div>
-
-          {/* Add Elements Section */}
-          <div className="p-4 border-b border-slate-800">
-            <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">Add Elements</span>
-            
-            <div className="mb-3">
-              <input 
-                type="file" 
-                accept="image/png, image/jpeg, image/webp" 
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                className="hidden" 
-              />
-              <button 
-                onClick={() => fileInputRef.current.click()}
-                className="w-full bg-gradient-to-r from-emerald-600/20 to-teal-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 border border-emerald-500/30 text-emerald-400 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition"
-              >
-                <i className="fa-solid fa-cloud-arrow-up"></i>
-                <span>Upload Image / PNG</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => addLayer('text')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
-                <i className="fa-solid fa-font"></i> <span>Text</span>
-              </button>
-              <button onClick={() => addLayer('rect')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
-                <i className="fa-regular fa-square"></i> <span>Shape</span>
-              </button>
-              <button onClick={() => addLayer('circle')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
-                <i className="fa-regular fa-circle"></i> <span>Circle</span>
-              </button>
-              <button onClick={() => addLayer('line')} className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition">
-                <i className="fa-solid fa-minus"></i> <span>Line</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Themes */}
-          <div className="p-4 border-b border-slate-800">
-             <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">1-Click Themes</span>
-             <div className="flex space-x-2 overflow-x-auto pb-1">
-               {THEMES.map((theme, i) => (
-                 <button key={i} onClick={() => applyTheme(theme)} className="shrink-0 flex items-center space-x-1 bg-slate-900 border border-slate-800 p-1.5 rounded-lg hover:border-slate-500">
-                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: theme.bg}}></span>
-                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: theme.accent}}></span>
-                    <span className="text-[9px] font-bold text-slate-300 ml-1">{theme.name}</span>
-                 </button>
-               ))}
-             </div>
-          </div>
-
-          {/* Selected Layer Properties Editor */}
-          <div className="p-4 flex-1">
-            {selectedLayer ? (
-              <div className="space-y-4 animate-[fadeIn_0.2s_ease-out]">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">Edit {selectedLayer.type}</span>
-                  <div className="flex space-x-1">
-                    <button onClick={() => moveLayer('up')} className="w-6 h-6 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex items-center justify-center" title="Bring Forward"><i className="fa-solid fa-arrow-up text-[10px]"></i></button>
-                    <button onClick={() => moveLayer('down')} className="w-6 h-6 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 flex items-center justify-center" title="Send Backward"><i className="fa-solid fa-arrow-down text-[10px]"></i></button>
-                    <button onClick={deleteSelectedLayer} className="w-6 h-6 bg-red-900/40 hover:bg-red-800/60 text-red-400 rounded flex items-center justify-center ml-2" title="Delete"><i className="fa-solid fa-trash text-[10px]"></i></button>
-                  </div>
-                </div>
-
-                {/* AI Text Layer Controls */}
-                {selectedLayer.type === 'text' && (
-                    <div className="bg-indigo-950/30 border border-indigo-500/30 p-3 rounded-xl mb-3">
-                        <span className="text-[9px] font-bold tracking-wider text-indigo-300 uppercase block mb-2">✨ Contextual AI Edits</span>
-                        <div className="flex space-x-2">
-                            <button onClick={() => handleAiRewriteText("more catchy and engaging for social media")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] py-1.5 rounded font-bold transition">Make Catchy</button>
-                            <button onClick={() => handleAiRewriteText("shorter and more punchy")} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] py-1.5 rounded font-bold transition">Make Shorter</button>
-                        </div>
-                        <button onClick={() => handleAiRewriteText("with corrected grammar and spelling only")} className="w-full mt-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-[10px] py-1.5 rounded font-bold transition">Fix Grammar</button>
-                    </div>
-                )}
-
-                {/* Common Position Properties */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[9px] text-slate-400 block mb-1">X Position</label>
-                    <input type="number" value={Math.round(selectedLayer.x || selectedLayer.x1 || 0)} onChange={(e) => updateSelectedLayer(selectedLayer.type === 'line' ? 'x1' : 'x', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                  </div>
-                  <div>
-                    <label className="text-[9px] text-slate-400 block mb-1">Y Position</label>
-                    <input type="number" value={Math.round(selectedLayer.y || selectedLayer.y1 || 0)} onChange={(e) => updateSelectedLayer(selectedLayer.type === 'line' ? 'y1' : 'y', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                  </div>
-                </div>
-
-                {/* ADVANCED SHADOW & GLOW */}
-                <div className="space-y-3 bg-slate-900 p-3 rounded-lg border border-slate-800">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-[9px] text-slate-400">Opacity (Transparent)</label>
-                      <span className="text-[9px] text-slate-300">{Math.round((selectedLayer.opacity || 1) * 100)}%</span>
-                    </div>
-                    <input 
-                      type="range" min="0.1" max="1" step="0.05" 
-                      value={selectedLayer.opacity || 1} 
-                      onChange={(e) => updateSelectedLayer('opacity', parseFloat(e.target.value))} 
-                      className="w-full accent-blue-500" 
-                    />
-                  </div>
-                  
-                  <div className="pt-2 border-t border-slate-800">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <input 
-                        type="checkbox" 
-                        id="shadow-toggle"
-                        checked={selectedLayer.hasShadow || false}
-                        onChange={(e) => updateSelectedLayer('hasShadow', e.target.checked)}
-                        className="w-3.5 h-3.5 rounded bg-black border-slate-700 accent-blue-500"
-                      />
-                      <label htmlFor="shadow-toggle" className="text-[10px] text-slate-300 font-bold cursor-pointer">Enable Drop Shadow / Glow</label>
-                    </div>
-                    
-                    {selectedLayer.hasShadow && (
-                      <div className="grid grid-cols-2 gap-3 mt-3 p-2 bg-black/40 rounded border border-slate-800">
-                        <div>
-                          <label className="text-[9px] text-slate-400 block mb-1">Shadow Color</label>
-                          <div className="flex bg-black border border-slate-700 rounded p-1">
-                            <input type="color" value={selectedLayer.shadowColor || '#000000'} onChange={(e) => updateSelectedLayer('shadowColor', e.target.value)} className="w-full h-6 border-0 bg-transparent rounded cursor-pointer" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-slate-400 block mb-1">Blur / Spread</label>
-                          <input type="range" min="0" max="100" value={selectedLayer.shadowBlur || 15} onChange={(e) => updateSelectedLayer('shadowBlur', parseInt(e.target.value))} className="w-full accent-blue-500 mt-1" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Image Specific Properties */}
-                {selectedLayer.type === 'image' && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Width</label>
-                        <input type="number" value={Math.round(selectedLayer.w)} onChange={(e) => updateSelectedLayer('w', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Height</label>
-                        <input type="number" value={Math.round(selectedLayer.h)} onChange={(e) => updateSelectedLayer('h', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-[9px] text-slate-400 block mb-1">Corner Rounding (rx)</label>
-                      <input type="range" min="0" max={Math.min(selectedLayer.w, selectedLayer.h) / 2} value={selectedLayer.rx || 0} onChange={(e) => updateSelectedLayer('rx', parseInt(e.target.value))} className="w-full accent-blue-500" />
-                    </div>
-
-                    <div>
-                      <label className="text-[9px] text-slate-400 block mb-1">Image Filter Effects</label>
-                      <select 
-                        value={selectedLayer.filter || 'none'} 
-                        onChange={(e) => updateSelectedLayer('filter', e.target.value)}
-                        className="w-full bg-black border border-slate-800 rounded p-1.5 text-xs text-white"
-                      >
-                        <option value="none">Normal (None)</option>
-                        <option value="grayscale(100%)">Black & White</option>
-                        <option value="sepia(80%)">Vintage Sepia</option>
-                        <option value="contrast(150%) saturate(150%)">Vibrant & High Contrast</option>
-                        <option value="invert(100%)">Color Invert</option>
-                        <option value="blur(4px)">Soft Blur</option>
-                        <option value="hue-rotate(90deg)">Hue Rotate (Neon)</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Text Specific Properties */}
-                {selectedLayer.type === 'text' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-[9px] text-slate-400 block mb-1">Text Content</label>
-                      <textarea value={selectedLayer.text} onChange={(e) => updateSelectedLayer('text', e.target.value)} rows={3} className="w-full bg-black border border-slate-800 rounded p-2 text-xs" />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Text Color</label>
-                        <div className="flex bg-black border border-slate-800 rounded p-1">
-                          <input type="color" value={selectedLayer.fill} onChange={(e) => updateSelectedLayer('fill', e.target.value)} className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Font Size</label>
-                        <input type="number" value={selectedLayer.fontSize} onChange={(e) => updateSelectedLayer('fontSize', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1.5 text-xs" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Font Family</label>
-                        <select value={selectedLayer.fontFamily} onChange={(e) => updateSelectedLayer('fontFamily', e.target.value)} className="w-full bg-black border border-slate-800 rounded p-1 text-[10px]">
-                          {FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Alignment</label>
-                        <div className="flex bg-black border border-slate-800 rounded">
-                           <button onClick={() => updateSelectedLayer('textAnchor', 'start')} className={`flex-1 p-1 text-[10px] ${selectedLayer.textAnchor === 'start' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}><i className="fa-solid fa-align-left"></i></button>
-                           <button onClick={() => updateSelectedLayer('textAnchor', 'middle')} className={`flex-1 p-1 text-[10px] border-l border-r border-slate-800 ${selectedLayer.textAnchor === 'middle' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}><i className="fa-solid fa-align-center"></i></button>
-                           <button onClick={() => updateSelectedLayer('textAnchor', 'end')} className={`flex-1 p-1 text-[10px] ${selectedLayer.textAnchor === 'end' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}><i className="fa-solid fa-align-right"></i></button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 p-2 bg-slate-900 border border-slate-800 rounded-lg">
-                      <div className="col-span-2">
-                        <span className="text-[9px] font-bold text-slate-300 block mb-2 uppercase border-b border-slate-800 pb-1">Text Outline (Stroke)</span>
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Outline Color</label>
-                        <div className="flex bg-black border border-slate-700 rounded p-1">
-                          <input type="color" value={selectedLayer.stroke === 'none' ? '#000000' : selectedLayer.stroke} onChange={(e) => updateSelectedLayer('stroke', e.target.value)} className="w-full h-5 border-0 bg-transparent rounded cursor-pointer" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Outline Thickness</label>
-                        <input type="number" min="0" max="20" value={selectedLayer.strokeWidth || 0} onChange={(e) => updateSelectedLayer('strokeWidth', parseInt(e.target.value))} className="w-full bg-black border border-slate-700 rounded px-2 py-1 text-xs" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between">
-                         <label className="text-[9px] text-slate-400 block mb-1">Letter Spacing</label>
-                         <span className="text-[9px] text-slate-300">{selectedLayer.letterSpacing || 0}px</span>
-                      </div>
-                      <input type="range" min="-10" max="50" value={selectedLayer.letterSpacing || 0} onChange={(e) => updateSelectedLayer('letterSpacing', parseInt(e.target.value))} className="w-full accent-blue-500" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Shape Properties (Rect, Circle) */}
-                {(selectedLayer.type === 'rect' || selectedLayer.type === 'circle') && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Fill Color</label>
-                        <div className="flex bg-black border border-slate-800 rounded p-1">
-                          <input type="color" value={selectedLayer.fill === 'none' ? '#000000' : selectedLayer.fill} onChange={(e) => updateSelectedLayer('fill', e.target.value)} className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Stroke (Border)</label>
-                        <div className="flex bg-black border border-slate-800 rounded p-1">
-                          <input type="color" value={selectedLayer.stroke === 'none' ? '#000000' : selectedLayer.stroke} onChange={(e) => updateSelectedLayer('stroke', e.target.value)} className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedLayer.type === 'rect' && (
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[9px] text-slate-400 block mb-1">Width</label>
-                          <input type="number" value={selectedLayer.w} onChange={(e) => updateSelectedLayer('w', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-slate-400 block mb-1">Height</label>
-                          <input type="number" value={selectedLayer.h} onChange={(e) => updateSelectedLayer('h', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-slate-400 block mb-1">Round (rx)</label>
-                          <input type="number" value={selectedLayer.rx || 0} onChange={(e) => updateSelectedLayer('rx', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {selectedLayer.type === 'circle' && (
-                      <div>
-                        <label className="text-[9px] text-slate-400 block mb-1">Radius (r)</label>
-                        <input type="number" value={selectedLayer.r} onChange={(e) => updateSelectedLayer('r', parseInt(e.target.value))} className="w-full bg-black border border-slate-800 rounded px-2 py-1 text-xs" />
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-              </div>
-            ) : (
-              <div className="animate-[fadeIn_0.2s_ease-out]">
-                <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block mb-3">Global Canvas</span>
-                <label className="text-[9px] text-slate-400 block mb-1">Background Color</label>
-                <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded p-2">
-                  <input type="color" value={canvasBg} onChange={(e) => setCanvasBg(e.target.value)} className="w-8 h-8 border-0 bg-transparent rounded cursor-pointer" />
-                  <span className="text-xs font-mono text-slate-300 uppercase">{canvasBg}</span>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-4 leading-relaxed">
-                  Click any element on the canvas to edit its properties, or use the <strong>AI Magic Studio</strong> above to let Gemini do the heavy lifting!
-                </p>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Central Canvas Workspace */}
-        <main className="flex-1 bg-[#121212] relative overflow-auto flex items-center justify-center relative p-8">
-          
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-
-          <div 
-            className="relative shadow-2xl transition-transform duration-100 ease-out flex-shrink-0"
-            style={{ 
-              width: `${currentWidth}px`, 
-              height: `${currentHeight}px`,
-              transform: `scale(${zoomLevel / 100})`,
-              transformOrigin: 'center center'
-            }}
-          >
-            <svg
-              id="main-svg-canvas"
-              ref={svgRef}
-              viewBox={`0 0 ${currentWidth} ${currentHeight}`}
-              className="w-full h-full overflow-visible select-none touch-none"
-              xmlns="http://www.w3.org/2000/svg"
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              onClick={handleCanvasClick}
-            >
-              <rect id="canvas-bg-rect" width={currentWidth} height={currentHeight} fill={canvasBg} />
-
-              {layers.map(layer => {
-                const isSelected = layer.id === selectedLayerId;
-                const layerOpacity = layer.opacity !== undefined ? layer.opacity : 1;
-                
-                // Advanced Filter Combination Logic (Supports CSS Drop-Shadow for vibrant Glows)
-                const shadowFilter = layer.hasShadow ? `drop-shadow(0px 8px ${layer.shadowBlur !== undefined ? layer.shadowBlur : 15}px ${layer.shadowColor || 'rgba(0,0,0,0.6)'})` : '';
-                const imgFilter = layer.filter && layer.filter !== 'none' ? layer.filter : '';
-                const combinedFilter = `${shadowFilter} ${imgFilter}`.trim() || 'none';
-                
-                const sharedStyle = {
-                  cursor: isSelected ? 'grabbing' : 'grab',
-                  opacity: layerOpacity,
-                  filter: combinedFilter
-                };
-
-                let element = null;
-
-                if (layer.type === 'image') {
-                   const clipId = `clip_${layer.id}`;
-                   element = (
-                     <g 
-                       transform={`translate(${layer.x}, ${layer.y})`} 
-                       onPointerDown={(e) => handlePointerDown(e, layer.id)}
-                       style={sharedStyle}
-                     >
-                       <defs>
-                         <clipPath id={clipId}>
-                           <rect width={layer.w} height={layer.h} rx={layer.rx || 0} />
-                         </clipPath>
-                       </defs>
-                       <image 
-                         href={layer.src} 
-                         width={layer.w} 
-                         height={layer.h} 
-                         clipPath={`url(#${clipId})`}
-                         preserveAspectRatio="xMidYMid slice"
-                       />
-                       {isSelected && (
-                         <rect width={layer.w} height={layer.h} rx={layer.rx || 0} fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="8 4" />
-                       )}
-                     </g>
-                   );
-                }
-                else if (layer.type === 'rect') {
-                  element = (
-                    <g transform={`translate(${layer.x}, ${layer.y})`} onPointerDown={(e) => handlePointerDown(e, layer.id)}>
-                      <rect
-                        width={layer.w} height={layer.h} rx={layer.rx || 0}
-                        fill={layer.fill} stroke={layer.stroke} strokeWidth={layer.strokeWidth || 0}
-                        style={sharedStyle}
-                      />
-                      {isSelected && <rect width={layer.w} height={layer.h} rx={layer.rx || 0} fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="8 4" />}
-                    </g>
-                  );
-                } 
-                else if (layer.type === 'circle') {
-                  element = (
-                    <g transform={`translate(${layer.x}, ${layer.y})`} onPointerDown={(e) => handlePointerDown(e, layer.id)}>
-                      <circle
-                        cx={0} cy={0} r={layer.r}
-                        fill={layer.fill} stroke={layer.stroke} strokeWidth={layer.strokeWidth || 0}
-                        style={{...sharedStyle, filter: layer.blur ? `blur(80px) ${shadowFilter}` : combinedFilter}}
-                      />
-                      {isSelected && <circle cx={0} cy={0} r={layer.r + 4} fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="8 4" />}
-                    </g>
-                  );
-                }
-                else if (layer.type === 'line') {
-                  element = (
-                    <g onPointerDown={(e) => handlePointerDown(e, layer.id)}>
-                      <line x1={layer.x1} y1={layer.y1} x2={layer.x2} y2={layer.y2} stroke="transparent" strokeWidth="20" style={{cursor: 'grab'}} />
-                      <line
-                        x1={layer.x1} y1={layer.y1} x2={layer.x2} y2={layer.y2}
-                        stroke={layer.stroke} strokeWidth={layer.strokeWidth}
-                        style={sharedStyle}
-                      />
-                      {isSelected && (
-                         <line x1={layer.x1} y1={layer.y1} x2={layer.x2} y2={layer.y2} stroke="#3B82F6" strokeWidth={layer.strokeWidth + 4} strokeDasharray="8 4" opacity="0.5" />
-                      )}
-                    </g>
-                  );
-                }
-                else if (layer.type === 'text') {
-                  // Standard splitting by newline for basic multi-line support
-                  const lines = layer.text.split('\n');
-                  element = (
-                    <g transform={`translate(${layer.x}, ${layer.y})`} onPointerDown={(e) => handlePointerDown(e, layer.id)}>
-                      <text
-                        x={0} y={0}
-                        fill={layer.fill}
-                        fontSize={layer.fontSize}
-                        fontFamily={layer.fontFamily}
-                        fontWeight={layer.fontWeight || 'normal'}
-                        textAnchor={layer.textAnchor || 'start'}
-                        letterSpacing={layer.letterSpacing || 0}
-                        stroke={layer.stroke === 'none' ? null : layer.stroke}
-                        strokeWidth={layer.strokeWidth || 0}
-                        strokeLinejoin="round"
-                        style={{
-                          ...sharedStyle, 
-                          userSelect: 'none',
-                          dominantBaseline: 'hanging'
-                        }}
-                      >
-                         {lines.map((line, i) => (
-                             <tspan key={i} x={0} dy={i === 0 ? 0 : layer.fontSize * 1.2}>{line}</tspan>
-                         ))}
-                      </text>
-                      {isSelected && (
-                        <rect 
-                          x={layer.textAnchor === 'middle' ? -(layer.text.length * layer.fontSize * 0.3) : (layer.textAnchor === 'end' ? -(layer.text.length * layer.fontSize * 0.6) : -5)} 
-                          y={-5} 
-                          width={(layer.text.length * layer.fontSize * 0.6) + 10} 
-                          height={(lines.length * layer.fontSize * 1.2) + 10} 
-                          fill="none" stroke="#3B82F6" strokeWidth="3" strokeDasharray="6 4" opacity="0.8" 
-                        />
-                      )}
-                    </g>
-                  );
-                }
-                
-                return <React.Fragment key={layer.id}>{element}</React.Fragment>;
-              })}
-            </svg>
-          </div>
-        </main>
       </div>
 
-      {/* Floating Notification */}
-      {notification && (
-        <div className="fixed bottom-6 right-6 bg-slate-900 border border-slate-700 text-white py-3 px-6 rounded-xl shadow-2xl flex items-center space-x-3 z-50 animate-[fadeIn_0.2s_ease-out]">
-          <i className="fa-solid fa-circle-check text-emerald-400"></i>
-          <span className="text-xs font-bold">{notification}</span>
+      <!-- AI -->
+      <div class="ai-section">
+        <div class="sec-title ai"><i class="fa-solid fa-wand-magic-sparkles"></i> 🤖 AI Magic Studio</div>
+        <div class="ai-row">
+          <label style="color:#a5b4fc">Generate Brand Theme</label>
+          <div class="ai-input-row">
+            <input type="text" id="ai-theme-inp" placeholder="e.g. Cyberpunk Neon"/>
+            <button class="btn-ai indigo" onclick="aiTheme()">Apply</button>
+          </div>
         </div>
-      )}
+        <div class="ai-row">
+          <label style="color:#a5b4fc">Generate Text Elements</label>
+          <div class="ai-input-row">
+            <input type="text" id="ai-content-inp" placeholder="e.g. Tips for good sleep"/>
+            <button class="btn-ai fuchsia" onclick="aiContent()">Generate</button>
+          </div>
+        </div>
+      </div>
 
-      {/* Custom Styles Injection */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #0A0A0A;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #334155;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #475569;
-        }
-      `}} />
+      <!-- ADD ELEMENTS -->
+      <div class="section">
+        <div class="sec-title">Add Elements</div>
+        <input type="file" id="file-inp" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadImage(this)"/>
+        <button class="upload-btn" onclick="document.getElementById('file-inp').click()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Image / PNG</button>
+        <div class="elem-grid">
+          <button class="elem-btn" onclick="addLayer('text')"><i class="fa-solid fa-font"></i> Text</button>
+          <button class="elem-btn" onclick="addLayer('rect')"><i class="fa-regular fa-square"></i> Shape</button>
+          <button class="elem-btn" onclick="addLayer('circle')"><i class="fa-regular fa-circle"></i> Circle</button>
+          <button class="elem-btn" onclick="addLayer('line')"><i class="fa-solid fa-minus"></i> Line</button>
+        </div>
+      </div>
 
-    </div>
-  );
+      <!-- THEMES -->
+      <div class="section">
+        <div class="sec-title">1-Click Themes</div>
+        <div class="theme-row" id="theme-row"></div>
+      </div>
+
+      <!-- PROPERTIES -->
+      <div class="props-panel" id="props-panel">
+        <div id="props-selected" style="display:none">
+          <div class="props-header">
+            <span class="props-title" id="props-title">Edit Layer</span>
+            <div class="prop-actions">
+              <button class="icon-btn" title="Bring Forward" onclick="moveLayer('up')"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="icon-btn" title="Send Backward" onclick="moveLayer('down')"><i class="fa-solid fa-arrow-down"></i></button>
+              <button class="icon-btn del" title="Delete" onclick="deleteLayer()"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+          <div id="props-body"></div>
+        </div>
+
+        <div id="props-empty">
+          <div class="sec-title">Global Canvas</div>
+          <label>Background Color</label>
+          <div class="bg-field">
+            <input type="color" id="bg-color" oninput="state.bg=this.value;renderBg();document.getElementById('bg-hex').textContent=this.value.toUpperCase()"/>
+            <span class="hex-val" id="bg-hex">#0B0F19</span>
+          </div>
+          <p class="no-select-msg" style="margin-top:10px">Click any element on the canvas to edit its properties, or use the <strong>AI Magic Studio</strong> above to let Gemini do the heavy lifting!</p>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- CANVAS -->
+    <main id="canvas-main">
+      <div class="dot-grid"></div>
+      <div class="canvas-wrap" id="canvas-wrap">
+        <svg id="main-svg" xmlns="http://www.w3.org/2000/svg"
+          onpointerdown="svgPointerDown(event)"
+          onpointermove="svgPointerMove(event)"
+          onpointerup="svgPointerUp(event)"
+          onpointerleave="svgPointerUp(event)"
+          onclick="svgClick(event)">
+          <rect id="bg-rect"/>
+        </svg>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- AI OVERLAY -->
+<div id="ai-overlay">
+  <div class="ai-loader">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
+    <span>Gemini AI is working...</span>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><i class="fa-solid fa-circle-check"></i><span id="toast-msg"></span></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const FORMATS = [
+  { id:'instagram-portrait', name:'Instagram Portrait', w:1080, h:1350, icon:'fa-brands fa-instagram' },
+  { id:'youtube-thumbnail', name:'YouTube Thumbnail', w:1280, h:720, icon:'fa-brands fa-youtube' },
+  { id:'business-card', name:'Business Card', w:1050, h:600, icon:'fa-solid fa-address-card' },
+  { id:'logo-design', name:'Minimalist Logo', w:800, h:800, icon:'fa-solid fa-compass-drafting' },
+  { id:'a4-document', name:'A4 Document', w:827, h:1169, icon:'fa-solid fa-file-lines' },
+  { id:'flyer-poster', name:'Flyer / Poster', w:1080, h:1528, icon:'fa-solid fa-scroll' },
+  { id:'custom-dimension', name:'Custom Dimension', w:1000, h:1000, icon:'fa-solid fa-sliders' }
+];
+
+const TEMPLATES = {
+  'instagram-portrait': {
+    bg:'#0B0F19', layers:[
+      { id:'glow1',type:'circle',x:200,y:200,r:350,fill:'#10B981',opacity:.1,blur:true },
+      { id:'glow2',type:'circle',x:800,y:1000,r:350,fill:'#3B82F6',opacity:.08,blur:true },
+      { id:'badge-bg',type:'rect',x:100,y:180,w:180,h:48,rx:8,fill:'#10B981',opacity:.15,stroke:'#10B981',strokeWidth:1.5,hasShadow:true,shadowColor:'#10B981',shadowBlur:20 },
+      { id:'badge-txt',type:'text',x:190,y:212,text:'PRO TIPS',fontSize:18,fontWeight:'800',fill:'#10B981',fontFamily:'Inter',textAnchor:'middle' },
+      { id:'title1',type:'text',x:100,y:360,text:'3 Tools You Are',fontSize:72,fontWeight:'900',fill:'#FFFFFF',fontFamily:'League Spartan',hasShadow:true,shadowColor:'#000000',shadowBlur:15 },
+      { id:'title2',type:'text',x:100,y:460,text:'USING WRONG.',fontSize:72,fontWeight:'900',fill:'#10B981',fontFamily:'League Spartan',hasShadow:true,shadowColor:'#10B981',shadowBlur:30 },
+      { id:'desc',type:'text',x:100,y:600,text:'Stop wasting hours doing everything manually. Use these automated agents instead.',fontSize:24,fontWeight:'400',fill:'#9CA3AF',fontFamily:'Inter' },
+      { id:'footer-line',type:'line',x1:100,y1:1150,x2:980,y2:1150,stroke:'#1F2937',strokeWidth:2 },
+      { id:'handle',type:'text',x:100,y:1210,text:'@aarav_tech',fontSize:22,fontWeight:'bold',fill:'#9CA3AF',fontFamily:'Plus Jakarta Sans' },
+      { id:'save',type:'text',x:980,y:1210,text:'SAVE POST ↗',fontSize:20,fontWeight:'900',fill:'#10B981',fontFamily:'Inter',textAnchor:'end' }
+    ]
+  },
+  'youtube-thumbnail': {
+    bg:'#070A13', layers:[
+      { id:'glow',type:'circle',x:1100,y:360,r:400,fill:'#EF4444',opacity:.15,blur:true },
+      { id:'accent-box',type:'rect',x:80,y:180,w:600,h:360,rx:20,fill:'#131B2E',stroke:'#3B82F6',strokeWidth:4,opacity:1,hasShadow:true,shadowColor:'#000000',shadowBlur:20 },
+      { id:'badge',type:'rect',x:120,y:220,w:160,h:42,rx:6,fill:'#EF4444',opacity:1 },
+      { id:'badge-txt',type:'text',x:200,y:248,text:'FREE COURSE',fontSize:15,fontWeight:'900',fill:'#FFFFFF',fontFamily:'Inter',textAnchor:'middle' },
+      { id:'main-title',type:'text',x:120,y:360,text:'REACT JS IN',fontSize:58,fontWeight:'900',fill:'#FFFFFF',fontFamily:'Archivo Black' },
+      { id:'sub-title',type:'text',x:120,y:450,text:'10 MINUTES!',fontSize:58,fontWeight:'900',fill:'#3B82F6',fontFamily:'Archivo Black',hasShadow:true,shadowColor:'#3B82F6',shadowBlur:25 },
+      { id:'caption',type:'text',x:120,y:500,text:'No experience required. Learn clean architecture.',fontSize:18,fontWeight:'400',fill:'#9CA3AF',fontFamily:'Inter' },
+      { id:'mockup-rect',type:'rect',x:740,y:180,w:460,h:360,rx:16,fill:'#1E293B',stroke:'#334155',strokeWidth:2,opacity:1,hasShadow:true,shadowColor:'#000000',shadowBlur:30 },
+      { id:'mockup-text',type:'text',x:970,y:370,text:'[ DRAG SCREENSHOT HERE ]',fontSize:20,fontWeight:'bold',fill:'#64748B',fontFamily:'Space Grotesk',textAnchor:'middle' }
+    ]
+  }
+};
+
+const THEMES = [
+  { name:'Dark Neon', bg:'#09090B', text:'#FFFFFF', card:'#18181B', accent:'#00F5A0' },
+  { name:'Royal Gold', bg:'#172A45', text:'#F8FAFC', card:'#0B132B', accent:'#F5A623' },
+  { name:'Vaporwave', bg:'#10002B', text:'#E0AAFF', card:'#240046', accent:'#FF006E' },
+  { name:'Latte', bg:'#F9F6F0', text:'#2D3748', card:'#FFFFFF', accent:'#D69E2E' }
+];
+
+const FONTS = ['League Spartan','Archivo Black','Anton','Playfair Display','Space Grotesk','Inter','Montserrat','Plus Jakarta Sans'];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const state = {
+  format: FORMATS[0],
+  customW: 1000, customH: 1000,
+  bg: '#0B0F19',
+  layers: [],
+  selectedId: null,
+  dragging: false,
+  dragOffset: {x:0,y:0},
+  zoom: 100
+};
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  renderFormatGrid();
+  renderThemes();
+  loadTemplate('instagram-portrait');
+  updateCanvasSize();
 }
+
+function renderFormatGrid() {
+  document.getElementById('fmt-grid').innerHTML = FORMATS.map(f => `
+    <button class="fmt-btn ${f.id===state.format.id?'active':''}" onclick="setFormat('${f.id}')">
+      <div class="fmt-name"><i class="${f.icon}"></i>${f.name}</div>
+      <div class="fmt-dim">${f.w} × ${f.h}</div>
+    </button>`).join('');
+}
+
+function renderThemes() {
+  document.getElementById('theme-row').innerHTML = THEMES.map((t,i) => `
+    <div class="theme-chip" onclick="applyTheme(${i})">
+      <span class="theme-dot" style="background:${t.bg}"></span>
+      <span class="theme-dot" style="background:${t.accent}"></span>
+      <span>${t.name}</span>
+    </div>`).join('');
+}
+
+function setFormat(id) {
+  state.format = FORMATS.find(f=>f.id===id);
+  state.selectedId = null;
+  renderFormatGrid();
+  document.getElementById('custom-dims').style.display = id==='custom-dimension'?'flex':'none';
+  if (id!=='custom-dimension' && TEMPLATES[id]) {
+    loadTemplate(id);
+  } else {
+    state.layers = [];
+    state.bg = '#FFFFFF';
+    renderAll();
+  }
+  updateCanvasSize();
+}
+
+function setCustomDim() {
+  state.customW = parseInt(document.getElementById('cust-w').value)||100;
+  state.customH = parseInt(document.getElementById('cust-h').value)||100;
+  updateCanvasSize();
+  renderAll();
+}
+
+function loadTemplate(id) {
+  const t = TEMPLATES[id];
+  state.bg = t.bg;
+  state.layers = t.layers.map(l=>({...l}));
+  renderAll();
+}
+
+function cW() { return state.format.id==='custom-dimension'?state.customW:state.format.w; }
+function cH() { return state.format.id==='custom-dimension'?state.customH:state.format.h; }
+
+function updateCanvasSize() {
+  const svg = document.getElementById('main-svg');
+  const wrap = document.getElementById('canvas-wrap');
+  const w = cW(), h = cH();
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  wrap.style.width = w+'px';
+  wrap.style.height = h+'px';
+  document.getElementById('bg-rect').setAttribute('width',w);
+  document.getElementById('bg-rect').setAttribute('height',h);
+  renderBg();
+  applyZoom();
+}
+
+function applyZoom() {
+  document.getElementById('canvas-wrap').style.transform = `scale(${state.zoom/100})`;
+  document.getElementById('zoom-val').textContent = state.zoom+'%';
+}
+
+function zoom(d) {
+  state.zoom = Math.min(200,Math.max(20,state.zoom+d));
+  applyZoom();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function renderBg() {
+  document.getElementById('bg-rect').setAttribute('fill', state.bg);
+  document.getElementById('bg-color').value = state.bg;
+  document.getElementById('bg-hex').textContent = state.bg.toUpperCase();
+}
+
+function renderAll() {
+  renderBg();
+  renderLayers();
+  renderProps();
+}
+
+function filterStr(layer) {
+  const shadow = layer.hasShadow ? `drop-shadow(0px 8px ${layer.shadowBlur||15}px ${layer.shadowColor||'rgba(0,0,0,0.6)'})` : '';
+  const img = (layer.filter && layer.filter!=='none') ? layer.filter : '';
+  return [shadow, img].filter(Boolean).join(' ') || 'none';
+}
+
+function makeSVGEl(tag, attrs, style={}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k,v] of Object.entries(attrs)) if(v!==undefined) el.setAttribute(k,v);
+  for (const [k,v] of Object.entries(style)) el.style[k]=v;
+  return el;
+}
+
+function renderLayers() {
+  const svg = document.getElementById('main-svg');
+  // Remove old layer groups
+  svg.querySelectorAll('.layer-g').forEach(g=>g.remove());
+
+  for (const layer of state.layers) {
+    const g = makeSVGEl('g', {'data-id':layer.id, class:'layer-g'}, {cursor:'grab'});
+    const sel = layer.id === state.selectedId;
+    const op = layer.opacity !== undefined ? layer.opacity : 1;
+    const filt = filterStr(layer);
+
+    if (layer.type === 'image') {
+      const clipId = `clip_${layer.id}`;
+      const defs = makeSVGEl('defs',{});
+      const cp = makeSVGEl('clipPath',{id:clipId});
+      cp.appendChild(makeSVGEl('rect',{width:layer.w,height:layer.h,rx:layer.rx||0}));
+      defs.appendChild(cp);
+      g.appendChild(defs);
+      g.setAttribute('transform',`translate(${layer.x},${layer.y})`);
+      const img = makeSVGEl('image',{href:layer.src,width:layer.w,height:layer.h,'clip-path':`url(#${clipId})`,'preserveAspectRatio':'xMidYMid slice'});
+      img.style.opacity = op;
+      img.style.filter = filt;
+      g.appendChild(img);
+      if (sel) g.appendChild(makeSVGEl('rect',{width:layer.w,height:layer.h,rx:layer.rx||0,fill:'none',stroke:'#3b82f6','stroke-width':4,'stroke-dasharray':'8 4'}));
+    } else if (layer.type === 'rect') {
+      g.setAttribute('transform',`translate(${layer.x},${layer.y})`);
+      g.style.opacity = op;
+      g.style.filter = filt;
+      g.appendChild(makeSVGEl('rect',{width:layer.w,height:layer.h,rx:layer.rx||0,fill:layer.fill,stroke:layer.stroke||'none','stroke-width':layer.strokeWidth||0}));
+      if (sel) g.appendChild(makeSVGEl('rect',{width:layer.w,height:layer.h,rx:layer.rx||0,fill:'none',stroke:'#3b82f6','stroke-width':4,'stroke-dasharray':'8 4'}));
+    } else if (layer.type === 'circle') {
+      g.setAttribute('transform',`translate(${layer.x},${layer.y})`);
+      g.style.opacity = op;
+      const cf = layer.blur ? `blur(80px) ${layer.hasShadow?`drop-shadow(0 8px ${layer.shadowBlur||15}px ${layer.shadowColor||'#000'})`:''}` : filt;
+      g.style.filter = cf;
+      g.appendChild(makeSVGEl('circle',{cx:0,cy:0,r:layer.r,fill:layer.fill,stroke:layer.stroke||'none','stroke-width':layer.strokeWidth||0}));
+      if (sel) g.appendChild(makeSVGEl('circle',{cx:0,cy:0,r:layer.r+4,fill:'none',stroke:'#3b82f6','stroke-width':4,'stroke-dasharray':'8 4'}));
+    } else if (layer.type === 'line') {
+      g.style.opacity = op;
+      g.style.filter = filt;
+      // fat invisible hit target
+      g.appendChild(makeSVGEl('line',{x1:layer.x1,y1:layer.y1,x2:layer.x2,y2:layer.y2,stroke:'transparent','stroke-width':20}));
+      g.appendChild(makeSVGEl('line',{x1:layer.x1,y1:layer.y1,x2:layer.x2,y2:layer.y2,stroke:layer.stroke,'stroke-width':layer.strokeWidth}));
+      if (sel) g.appendChild(makeSVGEl('line',{x1:layer.x1,y1:layer.y1,x2:layer.x2,y2:layer.y2,stroke:'#3b82f6','stroke-width':(layer.strokeWidth||2)+4,'stroke-dasharray':'8 4',opacity:.5}));
+    } else if (layer.type === 'text') {
+      g.setAttribute('transform',`translate(${layer.x},${layer.y})`);
+      g.style.opacity = op;
+      g.style.filter = filt;
+      const txt = makeSVGEl('text',{
+        x:0,y:0,fill:layer.fill,'font-size':layer.fontSize,
+        'font-family':layer.fontFamily,'font-weight':layer.fontWeight||'normal',
+        'text-anchor':layer.textAnchor||'start',
+        'letter-spacing':layer.letterSpacing||0,
+        stroke:layer.stroke&&layer.stroke!=='none'?layer.stroke:null,
+        'stroke-width':layer.strokeWidth||0,'stroke-linejoin':'round'
+      },{userSelect:'none',dominantBaseline:'hanging'});
+      const lines = (layer.text||'').split('\n');
+      lines.forEach((line,i)=>{
+        const ts = makeSVGEl('tspan',{x:0, dy: i===0?0:layer.fontSize*1.2});
+        ts.textContent = line;
+        txt.appendChild(ts);
+      });
+      g.appendChild(txt);
+      if (sel) {
+        const len = (layer.text||'').length;
+        const lc = lines.length;
+        const anchorOff = layer.textAnchor==='middle'?-(len*layer.fontSize*.3):layer.textAnchor==='end'?-(len*layer.fontSize*.6):-5;
+        g.appendChild(makeSVGEl('rect',{
+          x:anchorOff,y:-5,width:(len*layer.fontSize*.6)+10,height:(lc*layer.fontSize*1.2)+10,
+          fill:'none',stroke:'#3b82f6','stroke-width':3,'stroke-dasharray':'6 4',opacity:.8
+        }));
+      }
+    }
+
+    g.addEventListener('pointerdown', e => layerPointerDown(e, layer.id));
+    svg.appendChild(g);
+  }
+}
+
+// ─── DRAG ────────────────────────────────────────────────────────────────────
+function svgCoords(e) {
+  const svg = document.getElementById('main-svg');
+  const CTM = svg.getScreenCTM();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x:(cx-CTM.e)/CTM.a, y:(cy-CTM.f)/CTM.d };
+}
+
+function layerPointerDown(e, id) {
+  e.stopPropagation();
+  state.selectedId = id;
+  state.dragging = true;
+  const c = svgCoords(e);
+  const l = state.layers.find(x=>x.id===id);
+  if (l.type==='line') state.dragOffset = {x:c.x-l.x1, y:c.y-l.y1};
+  else state.dragOffset = {x:c.x-(l.x||0), y:c.y-(l.y||0)};
+  renderLayers();
+  renderProps();
+}
+
+function svgPointerDown(e) { /* handled per layer */ }
+
+function svgPointerMove(e) {
+  if (!state.dragging || !state.selectedId) return;
+  e.preventDefault();
+  const c = svgCoords(e);
+  const nx = c.x - state.dragOffset.x;
+  const ny = c.y - state.dragOffset.y;
+  const l = state.layers.find(x=>x.id===state.selectedId);
+  if (!l) return;
+  if (l.type==='line') {
+    const dx=nx-l.x1, dy=ny-l.y1;
+    l.x1=nx; l.y1=ny; l.x2+=dx; l.y2+=dy;
+  } else { l.x=nx; l.y=ny; }
+  renderLayers();
+  syncPropsPosition();
+}
+
+function svgPointerUp() { state.dragging=false; }
+
+function svgClick(e) {
+  if (e.target.id==='main-svg'||e.target.id==='bg-rect') {
+    state.selectedId=null;
+    renderLayers();
+    renderProps();
+  }
+}
+
+// ─── PROPS PANEL ─────────────────────────────────────────────────────────────
+function renderProps() {
+  const sel = document.getElementById('props-selected');
+  const empty = document.getElementById('props-empty');
+  const l = state.layers.find(x=>x.id===state.selectedId);
+
+  if (!l) { sel.style.display='none'; empty.style.display='block'; return; }
+  sel.style.display='block'; empty.style.display='none';
+  document.getElementById('props-title').textContent = 'Edit '+l.type;
+  document.getElementById('props-body').innerHTML = buildPropsHTML(l);
+}
+
+function inp(label, type, val, onchange, extra='') {
+  return `<div class="field"><label>${label}</label><input type="${type}" value="${esc(val)}" oninput="${onchange}" ${extra}/></div>`;
+}
+
+function esc(v) { return String(v??'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function buildPropsHTML(l) {
+  let h = '';
+
+  // AI text rewrites
+  if (l.type==='text') h += `
+    <div class="ai-text-box">
+      <div class="ai-text-title">✨ Contextual AI Edits</div>
+      <div class="ai-rewrite-btns">
+        <button class="ai-rw-btn" onclick="aiRewrite('more catchy and engaging for social media')">Make Catchy</button>
+        <button class="ai-rw-btn" onclick="aiRewrite('shorter and more punchy')">Make Shorter</button>
+      </div>
+      <button class="ai-rw-btn secondary" style="width:100%" onclick="aiRewrite('with corrected grammar and spelling only')">Fix Grammar</button>
+    </div>`;
+
+  // Position
+  const xKey = l.type==='line'?'x1':'x';
+  const yKey = l.type==='line'?'y1':'y';
+  h += `<div class="field-group cols2">
+    <div class="field"><label>X Position</label><input type="number" value="${Math.round(l[xKey]||0)}" oninput="upd('${xKey}',+this.value)"/></div>
+    <div class="field"><label>Y Position</label><input type="number" value="${Math.round(l[yKey]||0)}" oninput="upd('${yKey}',+this.value)"/></div>
+  </div>`;
+
+  // Opacity + shadow
+  h += `<div class="card-box">
+    <div class="range-wrap">
+      <div class="range-label"><label style="margin:0">Opacity</label><span>${Math.round((l.opacity??1)*100)}%</span></div>
+      <input type="range" min=".05" max="1" step=".05" value="${l.opacity??1}" oninput="upd('opacity',+this.value);this.previousElementSibling.querySelector('span').textContent=Math.round(this.value*100)+'%'"/>
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <input type="checkbox" id="chk-shadow" ${l.hasShadow?'checked':''} onchange="upd('hasShadow',this.checked);renderProps()" style="accent-color:var(--accent)"/>
+        <label for="chk-shadow" style="margin:0;color:#cbd5e1;font-size:10px;font-weight:700;cursor:pointer">Enable Drop Shadow / Glow</label>
+      </div>
+      ${l.hasShadow?`<div class="field-group cols2" style="background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:6px;padding:8px">
+        <div class="field"><label>Shadow Color</label><div class="color-pick"><input type="color" value="${l.shadowColor||'#000000'}" oninput="upd('shadowColor',this.value)"/></div></div>
+        <div class="field"><label>Blur/Spread</label><input type="range" min="0" max="100" value="${l.shadowBlur||15}" oninput="upd('shadowBlur',+this.value)"/></div>
+      </div>`:''}
+    </div>
+  </div>`;
+
+  // Type-specific
+  if (l.type==='image') h += `
+    <div class="field-group cols2">
+      <div class="field"><label>Width</label><input type="number" value="${Math.round(l.w)}" oninput="upd('w',+this.value)"/></div>
+      <div class="field"><label>Height</label><input type="number" value="${Math.round(l.h)}" oninput="upd('h',+this.value)"/></div>
+    </div>
+    <div class="field"><label>Corner Rounding</label><input type="range" min="0" max="${Math.floor(Math.min(l.w,l.h)/2)}" value="${l.rx||0}" oninput="upd('rx',+this.value)"/></div>
+    <div class="field"><label>Image Filter</label>
+      <select oninput="upd('filter',this.value)" style="width:100%;padding:5px 8px;font-size:11px">
+        ${['none','grayscale(100%)','sepia(80%)','contrast(150%) saturate(150%)','invert(100%)','blur(4px)','hue-rotate(90deg)'].map(v=>`<option value="${v}" ${l.filter===v?'selected':''}>${{none:'Normal',
+          'grayscale(100%)':'B&W','sepia(80%)':'Vintage','contrast(150%) saturate(150%)':'Vibrant','invert(100%)':'Invert','blur(4px)':'Blur','hue-rotate(90deg)':'Hue Rotate'}[v]||v}</option>`).join('')}
+      </select>
+    </div>`;
+
+  if (l.type==='text') {
+    const fw = ['normal','bold','700','800','900'];
+    h += `
+    <div class="field"><label>Text Content</label><textarea rows="3" oninput="upd('text',this.value)" style="width:100%;padding:6px 8px;font-size:11px;resize:none">${esc(l.text)}</textarea></div>
+    <div class="field-group cols2">
+      <div class="field"><label>Text Color</label><div class="color-pick"><input type="color" value="${l.fill||'#ffffff'}" oninput="upd('fill',this.value)"/></div></div>
+      <div class="field"><label>Font Size</label><input type="number" value="${l.fontSize}" oninput="upd('fontSize',+this.value)"/></div>
+    </div>
+    <div class="field-group cols2">
+      <div class="field"><label>Font Family</label>
+        <select oninput="upd('fontFamily',this.value)" style="width:100%;padding:4px 6px;font-size:10px">${FONTS.map(f=>`<option value="${f}" ${l.fontFamily===f?'selected':''}>${f}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Font Weight</label>
+        <select oninput="upd('fontWeight',this.value)" style="width:100%;padding:4px 6px;font-size:10px">${fw.map(f=>`<option value="${f}" ${l.fontWeight===f?'selected':''}>${f}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="field"><label>Alignment</label>
+      <div class="align-btns">
+        <button class="align-btn ${l.textAnchor==='start'?'active':''}" onclick="upd('textAnchor','start');renderProps()"><i class="fa-solid fa-align-left"></i></button>
+        <button class="align-btn ${l.textAnchor==='middle'?'active':''}" onclick="upd('textAnchor','middle');renderProps()"><i class="fa-solid fa-align-center"></i></button>
+        <button class="align-btn ${l.textAnchor==='end'?'active':''}" onclick="upd('textAnchor','end');renderProps()"><i class="fa-solid fa-align-right"></i></button>
+      </div>
+    </div>
+    <div class="card-box">
+      <div class="sub-title">Text Outline (Stroke)</div>
+      <div class="field-group cols2">
+        <div class="field"><label>Outline Color</label><div class="color-pick"><input type="color" value="${l.stroke&&l.stroke!=='none'?l.stroke:'#000000'}" oninput="upd('stroke',this.value)"/></div></div>
+        <div class="field"><label>Thickness</label><input type="number" min="0" max="20" value="${l.strokeWidth||0}" oninput="upd('strokeWidth',+this.value)"/></div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="range-label"><label style="margin:0">Letter Spacing</label><span style="font-size:9px;color:#cbd5e1">${l.letterSpacing||0}px</span></div>
+      <input type="range" min="-10" max="50" value="${l.letterSpacing||0}" oninput="upd('letterSpacing',+this.value);this.previousElementSibling.querySelector('span').textContent=this.value+'px'"/>
+    </div>`;
+  }
+
+  if (l.type==='rect'||l.type==='circle') {
+    h += `<div class="field-group cols2">
+      <div class="field"><label>Fill Color</label><div class="color-pick"><input type="color" value="${l.fill&&l.fill!=='none'?l.fill:'#000000'}" oninput="upd('fill',this.value)"/></div></div>
+      <div class="field"><label>Stroke Color</label><div class="color-pick"><input type="color" value="${l.stroke&&l.stroke!=='none'?l.stroke:'#000000'}" oninput="upd('stroke',this.value)"/></div></div>
+    </div>`;
+    if (l.type==='rect') h += `<div class="field-group cols3">
+      <div class="field"><label>Width</label><input type="number" value="${l.w}" oninput="upd('w',+this.value)"/></div>
+      <div class="field"><label>Height</label><input type="number" value="${l.h}" oninput="upd('h',+this.value)"/></div>
+      <div class="field"><label>Round (rx)</label><input type="number" value="${l.rx||0}" oninput="upd('rx',+this.value)"/></div>
+    </div>`;
+    if (l.type==='circle') h += `<div class="field"><label>Radius</label><input type="number" value="${l.r}" oninput="upd('r',+this.value)"/></div>`;
+  }
+
+  if (l.type==='line') h += `<div class="field-group cols2">
+    <div class="field"><label>Stroke Color</label><div class="color-pick"><input type="color" value="${l.stroke||'#ffffff'}" oninput="upd('stroke',this.value)"/></div></div>
+    <div class="field"><label>Stroke Width</label><input type="number" value="${l.strokeWidth||2}" oninput="upd('strokeWidth',+this.value)"/></div>
+  </div>`;
+
+  return h;
+}
+
+function syncPropsPosition() {
+  // lightweight live position update during drag (skip full re-render)
+  const l = state.layers.find(x=>x.id===state.selectedId);
+  if (!l) return;
+  const xKey = l.type==='line'?'x1':'x';
+  const yKey = l.type==='line'?'y1':'y';
+  // find inputs by position in the form — they're always the first two numbers
+  const inputs = document.querySelectorAll('#props-body input[type=number]');
+  if (inputs[0]) inputs[0].value = Math.round(l[xKey]||0);
+  if (inputs[1]) inputs[1].value = Math.round(l[yKey]||0);
+}
+
+function upd(key, val) {
+  if (!state.selectedId) return;
+  const l = state.layers.find(x=>x.id===state.selectedId);
+  if (!l) return;
+  l[key] = val;
+  renderLayers();
+}
+
+// ─── LAYER OPS ───────────────────────────────────────────────────────────────
+function genId() { return `layer_${Date.now()}_${Math.random()*1000|0}`; }
+
+function addLayer(type) {
+  const w=cW(), h=cH();
+  const base = { id:genId(), type, x:w/2, y:h/2, opacity:1, hasShadow:false, shadowColor:'#000000', shadowBlur:15, filter:'none' };
+  let l;
+  if (type==='text') l={...base,text:'Double click to edit',fontSize:48,fontWeight:'bold',fill:'#FFFFFF',fontFamily:'Inter',textAnchor:'middle',letterSpacing:0,stroke:'none',strokeWidth:0};
+  else if (type==='rect') l={...base,x:w/2-100,y:h/2-100,w:200,h:200,rx:0,fill:'#3B82F6',stroke:'none',strokeWidth:0};
+  else if (type==='circle') l={...base,r:100,fill:'#10B981',stroke:'none',strokeWidth:0};
+  else if (type==='line') l={...base,x1:w/2-150,y1:h/2,x2:w/2+150,y2:h/2,stroke:'#FFFFFF',strokeWidth:4,x:w/2-150,y:h/2};
+  state.layers.push(l);
+  state.selectedId = l.id;
+  renderLayers();
+  renderProps();
+}
+
+function deleteLayer() {
+  if (!state.selectedId) return;
+  state.layers = state.layers.filter(l=>l.id!==state.selectedId);
+  state.selectedId = null;
+  renderLayers();
+  renderProps();
+}
+
+function moveLayer(dir) {
+  if (!state.selectedId) return;
+  const idx = state.layers.findIndex(l=>l.id===state.selectedId);
+  if (idx<0) return;
+  const arr = [...state.layers];
+  if (dir==='up' && idx<arr.length-1) [arr[idx],arr[idx+1]]=[arr[idx+1],arr[idx]];
+  else if (dir==='down' && idx>0) [arr[idx],arr[idx-1]]=[arr[idx-1],arr[idx]];
+  state.layers = arr;
+  renderLayers();
+}
+
+function uploadImage(inp) {
+  const file = inp.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const w=cW(), h=cH();
+      const max = Math.min(w,h)*.8;
+      let iw=img.width, ih=img.height;
+      if (iw>max||ih>max) { const r=Math.min(max/iw,max/ih); iw*=r; ih*=r; }
+      const l = {id:genId(),type:'image',src:ev.target.result,x:(w-iw)/2,y:(h-ih)/2,w:iw,h:ih,opacity:1,rx:0,hasShadow:false,shadowColor:'#000000',shadowBlur:15,filter:'none'};
+      state.layers.push(l);
+      state.selectedId = l.id;
+      renderLayers();
+      renderProps();
+      inp.value='';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── THEMES ──────────────────────────────────────────────────────────────────
+function applyTheme(i) {
+  const t = THEMES[i];
+  _applyThemeObj(t);
+}
+
+function _applyThemeObj(t) {
+  const oldBg = state.bg;
+  state.bg = t.bg;
+  state.layers = state.layers.map(l=>{
+    const u={...l};
+    if(l.type==='text') u.fill=(l.fill==='#FFFFFF'||l.fill==='#000000'||l.fill===oldBg)?t.text:t.accent;
+    else if(l.type==='rect'||l.type==='circle') if(l.fill!=='none') u.fill=Math.random()>.5?t.card:t.accent;
+    return u;
+  });
+  renderAll();
+  toast(`${t.name} theme applied!`);
+}
+
+// ─── AI ──────────────────────────────────────────────────────────────────────
+function showAiLoader(v) { document.getElementById('ai-overlay').className=v?'show':''; }
+
+async function callGemini(payload) {
+  const apiKey = '';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  for (let i=0,delay=1000; i<3; i++, delay*=2) {
+    try {
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      if (!r.ok) throw new Error('API error');
+      return await r.json();
+    } catch(e) { if(i===2) throw e; await new Promise(r=>setTimeout(r,delay)); }
+  }
+}
+
+async function aiTheme() {
+  const p = document.getElementById('ai-theme-inp').value.trim();
+  if (!p) return;
+  showAiLoader(true);
+  try {
+    const res = await callGemini({
+      contents:[{parts:[{text:`Act as an expert designer. Generate a gorgeous, highly contrasting color palette for a social media post about: "${p}". The text color MUST be highly visible against the background.`}]}],
+      generationConfig:{responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{name:{type:'STRING'},bg:{type:'STRING'},text:{type:'STRING'},card:{type:'STRING'},accent:{type:'STRING'}},required:['name','bg','text','card','accent']}}
+    });
+    const t = JSON.parse(res.candidates[0].content.parts[0].text);
+    _applyThemeObj(t);
+  } catch { toast('AI Theme generation failed.'); } finally { showAiLoader(false); }
+}
+
+async function aiContent() {
+  const p = document.getElementById('ai-content-inp').value.trim();
+  if (!p) return;
+  showAiLoader(true);
+  try {
+    const res = await callGemini({
+      contents:[{parts:[{text:`Act as a viral copywriter. Write a short, punchy social media post about: "${p}". Provide a catchy main heading and a descriptive subheading.`}]}],
+      generationConfig:{responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{heading:{type:'STRING'},subheading:{type:'STRING'}},required:['heading','subheading']}}
+    });
+    const c = JSON.parse(res.candidates[0].content.parts[0].text);
+    const w=cW(), h=cH();
+    state.layers.push(
+      {id:genId(),type:'text',x:w/2,y:h/2-60,opacity:1,hasShadow:true,shadowColor:'#000000',shadowBlur:15,filter:'none',text:c.heading.toUpperCase(),fontSize:72,fontWeight:'900',fill:'#FFFFFF',fontFamily:'League Spartan',textAnchor:'middle',letterSpacing:0,stroke:'none',strokeWidth:0},
+      {id:genId(),type:'text',x:w/2,y:h/2+40,opacity:1,hasShadow:false,filter:'none',text:c.subheading,fontSize:24,fontWeight:'400',fill:'#A3A3A3',fontFamily:'Inter',textAnchor:'middle',letterSpacing:0,stroke:'none',strokeWidth:0}
+    );
+    state.selectedId = state.layers[state.layers.length-2].id;
+    renderLayers(); renderProps();
+    document.getElementById('ai-content-inp').value='';
+    toast('AI Generated Text added to canvas!');
+  } catch { toast('AI Content generation failed.'); } finally { showAiLoader(false); }
+}
+
+async function aiRewrite(instruction) {
+  const l = state.layers.find(x=>x.id===state.selectedId);
+  if (!l||l.type!=='text') return;
+  showAiLoader(true);
+  try {
+    const res = await callGemini({
+      contents:[{parts:[{text:`Rewrite the following text to make it ${instruction}. Do not include quotation marks or extra conversation in your response, just the rewritten text:\n\n${l.text}`}]}]
+    });
+    let txt = res.candidates[0].content.parts[0].text.trim();
+    if(txt.startsWith('"')&&txt.endsWith('"')) txt=txt.slice(1,-1);
+    l.text=txt;
+    renderLayers(); renderProps();
+    toast('Text rewritten successfully!');
+  } catch { toast('AI Text Rewrite failed.'); } finally { showAiLoader(false); }
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function exportPNG() {
+  toast('Generating high-res PNG…');
+  const cached = state.selectedId;
+  state.selectedId = null;
+  renderLayers();
+  setTimeout(()=>{
+    const svg = document.getElementById('main-svg');
+    const str = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([str],{type:'image/svg+xml;charset=utf-8'});
+    const burl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = ()=>{
+      const c = document.createElement('canvas');
+      c.width=cW(); c.height=cH();
+      const ctx=c.getContext('2d');
+      ctx.fillStyle=state.bg;
+      ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      const a=document.createElement('a');
+      a.href=c.toDataURL('image/png',1);
+      a.download=`Studio-Export-${Date.now()}.png`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      state.selectedId=cached; renderLayers();
+      toast('Export complete!');
+    };
+    img.src=burl;
+  },120);
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
