@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nestless - Canva for Beginners</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+
+  <style>
+    @keyframes slideIn {
+      from { transform: translateY(1rem); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-in {
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="nestless-app-root"></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/database": "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import { initializeApp } from 'firebase/app';
+    import { 
+      getAuth, 
+      signInWithCustomToken, 
+      signInAnonymously, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged 
+    } from 'firebase/auth';
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      push, 
+      onValue, 
+      remove 
+    } from 'firebase/database';
+
+    // Expose references onto window objects to bridge modular module loading with Babel scripts
+    window.FirebaseAuthModules = {
+      initializeApp, getAuth, signInWithCustomToken, signInAnonymously,
+      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+      getDatabase, ref, set, push, onValue, remove
+    };
+  </script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBkqCtgo6aEW_vt2bbor86Gh9z0bDhPg1Q",
+      authDomain: "earn-qearner.firebaseapp.com",
+      databaseURL: "https://earn-qearner-default-rtdb.firebaseio.com",
+      projectId: "earn-qearner",
+      storageBucket: "earn-qearner.firebasestorage.app",
+      messagingSenderId: "952564046626",
+      appId: "1:952564046626:web:e43d4e85cd62a66a54a37b",
+      measurementId: "G-7WX77SLQP1"
+    };
+
+    // Safe extraction of imported context references
+    const { 
+      initializeApp, getAuth, signInWithCustomToken, signInAnonymously,
+      createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+      getDatabase, ref, set, push, onValue, remove 
+    } = window.FirebaseAuthModules;
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'nestless-default';
+    const appId = rawAppId.replace(/[.\/#$\[\]]/g, '_');
+
+    const SAMPLE_TEMPLATES = [
+      {
+        id: 't-insta-fashion',
+        title: 'Instagram Fashion Sale',
+        category: 'Social Media',
+        thumbnail: '🛍️',
+        backgroundColor: '#FFF1F2',
+        elements: [
+          { type: 'rect', left: 300, top: 225, width: 520, height: 380, fill: '#FFE4E6', angle: 0 },
+          { type: 'text', text: 'SUMMER FASHION', left: 300, top: 120, fontSize: 38, fontWeight: 'bold', fill: '#E11D48', fontFamily: 'Impact' },
+          { type: 'text', text: 'UP TO 60% OFF ALL ITEMS', left: 300, top: 200, fontSize: 22, fill: '#4B5563', fontFamily: 'Arial' },
+          { type: 'circle', left: 300, top: 310, radius: 45, fill: '#FB7185' },
+          { type: 'text', text: 'SHOP NOW', left: 300, top: 310, fontSize: 16, fontWeight: 'bold', fill: '#FFFFFF', fontFamily: 'Arial' }
+        ]
+      },
+      {
+        id: 't-tech-poster',
+        title: 'Minimalist Tech Meetup',
+        category: 'Posters',
+        thumbnail: '💻',
+        backgroundColor: '#FAF5FF',
+        elements: [
+          { type: 'circle', left: 300, top: 200, radius: 130, fill: '#F3E8FF' },
+          { type: 'text', text: 'NESTLESS DEVCON 2026', left: 300, top: 90, fontSize: 26, fontWeight: 'bold', fill: '#6B21A8', fontFamily: 'Georgia' },
+          { type: 'text', text: 'Building the Future with AI & Design', left: 300, top: 160, fontSize: 16, fill: '#7C3AED', fontFamily: 'Arial' },
+          { type: 'rect', left: 300, top: 280, width: 180, height: 40, fill: '#8B5CF6' },
+          { type: 'text', text: 'Join Live Now', left: 300, top: 280, fontSize: 14, fontWeight: 'bold', fill: '#FFFFFF', fontFamily: 'Arial' }
+        ]
+      },
+      {
+        id: 't-startup-logo',
+        title: 'Apex Tech Emblem',
+        category: 'Logos',
+        thumbnail: '⚡',
+        backgroundColor: '#0F172A',
+        elements: [
+          { type: 'rect', left: 300, top: 160, width: 80, height: 80, angle: 45, fill: '#38BDF8' },
+          { type: 'rect', left: 300, top: 160, width: 55, height: 55, angle: 45, fill: '#0F172A' },
+          { type: 'text', text: 'APEX', left: 300, top: 260, fontSize: 32, fontWeight: 'bold', fill: '#FFFFFF', fontFamily: 'Courier New' },
+          { type: 'text', text: 'Next-Gen Hosting', left: 300, top: 300, fontSize: 12, fill: '#38BDF8', fontFamily: 'Arial' }
+        ]
+      },
+      {
+        id: 't-yt-thumbnail',
+        title: 'Gaming Masterclass',
+        category: 'Thumbnails',
+        thumbnail: '🎮',
+        backgroundColor: '#030712',
+        elements: [
+          { type: 'rect', left: 160, top: 225, width: 300, height: 450, fill: '#1F2937', angle: -10 },
+          { type: 'text', text: 'BECOME A PRO', left: 300, top: 110, fontSize: 44, fontWeight: 'bold', fill: '#FACC15', fontFamily: 'Impact' },
+          { type: 'text', text: '10 Advanced Tips & Tricks', left: 300, top: 190, fontSize: 20, fill: '#38BDF8', fontFamily: 'Arial' },
+          { type: 'circle', left: 450, top: 300, radius: 55, fill: '#EF4444' },
+          { type: 'text', text: 'FREE', left: 450, top: 300, fontSize: 22, fontWeight: 'bold', fill: '#FFFFFF', fontFamily: 'Arial' }
+        ]
+      }
+    ];
+
+    function App() {
+      const [user, setUser] = useState(null);
+      const [authEmail, setAuthEmail] = useState('');
+      const [authPassword, setAuthPassword] = useState('');
+      const [authMode, setAuthMode] = useState('login'); 
+      const [currentView, setCurrentView] = useState('landing'); 
+      
+      const [activeCategory, setActiveCategory] = useState('All');
+      const [customTemplates, setCustomTemplates] = useState([]);
+      const [loadingCustom, setLoadingCustom] = useState(false);
+
+      const [canvasWidth, setCanvasWidth] = useState(600);
+      const [canvasHeight, setCanvasHeight] = useState(450);
+      const [designTitle, setDesignTitle] = useState('My Masterpiece');
+      const [fabricCanvas, setFabricCanvas] = useState(null);
+      const [selectedElement, setSelectedElement] = useState(null);
+      const [bgColor, setBgColor] = useState('#ffffff');
+      const [editorTab, setEditorTab] = useState('templates'); 
+      const [currentDesignId, setCurrentDesignId] = useState(null); 
+      const [imageUrlInput, setImageUrlInput] = useState('');
+
+      const [showExportModal, setShowExportModal] = useState(false);
+      const [exportFormat, setExportFormat] = useState('png'); 
+      const [alsoSaveToCloud, setAlsoSaveToCloud] = useState(true);
+      const [exportingProgress, setExportingProgress] = useState(false);
+
+      const [aiLayoutPrompt, setAiLayoutPrompt] = useState('');
+      const [generatingLayout, setGeneratingLayout] = useState(false);
+      const [aiImagePrompt, setAiImagePrompt] = useState('');
+      const [generatingImage, setGeneratingImage] = useState(false);
+
+      const [toasts, setToasts] = useState([]);
+      const canvasRef = useRef(null);
+
+      const showToast = (message, type = 'success') => {
+        const id = Date.now();
+        setToasts((prev) => [...prev, { id, message, type }]);
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== id));
+        }, 4500);
+      };
+
+      useEffect(() => {
+        const handleAuthFallback = (err) => {
+          console.warn("Firebase Anonymous Sign-In is restricted or disabled in Firebase Console. Switching safely to Local Guest Mode:", err);
+          setUser({
+            uid: 'guest-local',
+            isAnonymous: true,
+            email: 'Guest Explorer'
+          });
+        };
+
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              try {
+                await signInWithCustomToken(auth, __initial_auth_token);
+              } catch (tokenErr) {
+                console.warn("Custom token match issue, immediately choosing anonymous sign-in fallback:", tokenErr);
+                try {
+                  await signInAnonymously(auth);
+                } catch (anonErr) {
+                  handleAuthFallback(anonErr);
+                }
+              }
+            } else {
+              try {
+                await signInAnonymously(auth);
+              } catch (anonErr) {
+                handleAuthFallback(anonErr);
+              }
+            }
+          } catch (err) {
+            console.error("Auth pre-initialization error:", err);
+            handleAuthFallback(err);
+          }
+        };
+        initAuth();
+
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          if (currentUser) {
+            setUser(currentUser);
+            if (currentView === 'auth') {
+              setCurrentView('dashboard');
+            }
+          }
+        });
+
+        return () => unsubscribe();
+      }, []);
+
+      useEffect(() => {
+        if (!user) {
+          setCustomTemplates([]);
+          return;
+        }
+
+        if (user.uid === 'guest-local') {
+          const localSavedStr = localStorage.getItem(`nestless_local_templates_${appId}`);
+          if (localSavedStr) {
+            try {
+              setCustomTemplates(JSON.parse(localSavedStr));
+            } catch (e) {
+              console.error("Failed to parse locally stored custom templates:", e);
+              setCustomTemplates([]);
+            }
+          } else {
+            setCustomTemplates([]);
+          }
+          setLoadingCustom(false);
+          return;
+        }
+
+        setLoadingCustom(true);
+        const templatesRef = ref(db, `artifacts/${appId}/users/${user.uid}/custom_templates`);
+        
+        const unsubscribe = onValue(templatesRef, (snapshot) => {
+          const data = snapshot.val();
+          const templates = [];
+          if (data) {
+            Object.keys(data).forEach((key) => {
+              templates.push({ id: key, ...data[key] });
+            });
+          }
+          setCustomTemplates(templates);
+          setLoadingCustom(false);
+          }, (error) => {
+          console.error("Firebase RTDB Listening Error:", error);
+          setLoadingCustom(false);
+        });
+
+        return () => unsubscribe();
+      }, [user]);
+
+      useEffect(() => {
+        if (currentView !== 'editor') {
+          if (fabricCanvas) {
+            fabricCanvas.dispose();
+            setFabricCanvas(null);
+          }
+          return;
+        }
+
+        let canvasInstance = null;
+
+        const setupCanvas = () => {
+          if (!canvasRef.current) return;
+          canvasInstance = new window.fabric.Canvas(canvasRef.current, {
+            width: canvasWidth,
+            height: canvasHeight,
+            backgroundColor: bgColor
+          });
+
+          const handleSelection = () => {
+            const active = canvasInstance.getActiveObject();
+            setSelectedElement(active || null);
+          };
+
+          canvasInstance.on('selection:created', handleSelection);
+          canvasInstance.on('selection:updated', handleSelection);
+          canvasInstance.on('selection:cleared', () => setSelectedElement(null));
+          canvasInstance.on('object:modified', handleSelection);
+
+          canvasInstance.renderAll();
+          setFabricCanvas(canvasInstance);
+        };
+
+        if (window.fabric) {
+          setupCanvas();
+        } else {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js';
+          script.async = true;
+          script.onload = () => setupCanvas();
+          document.body.appendChild(script);
+        }
+
+        return () => {
+          if (canvasInstance) {
+            canvasInstance.dispose();
+          }
+        };
+      }, [currentView]);
+
+      useEffect(() => {
+        if (fabricCanvas) {
+          fabricCanvas.setBackgroundColor(bgColor, () => {
+            fabricCanvas.renderAll();
+          });
+        }
+      }, [bgColor, fabricCanvas]);
+
+      const handleAuthSubmit = async (e) => {
+        e.preventDefault();
+        if (!authEmail || !authPassword) {
+          showToast("Please provide both email and password.", "error");
+          return;
+        }
+        try {
+          if (authMode === 'signup') {
+            await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+            showToast("Welcome to Nestless! Account created successfully.");
+          } else {
+            await signInWithEmailAndPassword(auth, authEmail, authPassword);
+            showToast("Welcome back to Nestless!");
+          }
+          setCurrentView('dashboard');
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      };
+
+      const handleSignOut = async () => {
+        try {
+          await signOut(auth);
+          await signInAnonymously(auth);
+          showToast("Signed out successfully. Switched to workspace explore mode.");
+          setCurrentView('landing');
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      };
+
+      const addTextToCanvas = (textStr = 'Double click to edit', options = {}) => {
+        if (!fabricCanvas) return;
+        const text = new window.fabric.IText(textStr, {
+          left: canvasWidth / 2,
+          top: canvasHeight / 2,
+          fontSize: 26,
+          fontFamily: 'sans-serif',
+          fill: '#1E293B',
+          originX: 'center',
+          originY: 'center',
+          ...options
+        });
+        fabricCanvas.add(text);
+        fabricCanvas.setActiveObject(text);
+        fabricCanvas.renderAll();
+      };
+
+      const addShapeToCanvas = (shapeType) => {
+        if (!fabricCanvas) return;
+        const common = {
+          left: canvasWidth / 2,
+          top: canvasHeight / 2,
+          fill: '#4F46E5',
+          originX: 'center',
+          originY: 'center',
+        };
+
+        let shapeObj;
+        if (shapeType === 'rect') {
+          shapeObj = new window.fabric.Rect({
+            ...common,
+            width: 120,
+            height: 120
+          });
+        } else if (shapeType === 'circle') {
+          shapeObj = new window.fabric.Circle({
+            ...common,
+            radius: 60
+          });
+        } else if (shapeType === 'triangle') {
+          shapeObj = new window.fabric.Triangle({
+            ...common,
+            width: 120,
+            height: 110
+          });
+        }
+
+        if (shapeObj) {
+          fabricCanvas.add(shapeObj);
+          fabricCanvas.setActiveObject(shapeObj);
+          fabricCanvas.renderAll();
+        }
+      };
+
+      const handleCustomImageUpload = (e) => {
+        if (!fabricCanvas) return;
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          window.fabric.Image.fromURL(event.target.result, (img) => {
+            img.set({
+              left: canvasWidth / 2,
+              top: canvasHeight / 2,
+              originX: 'center',
+              originY: 'center'
+            });
+            img.scaleToWidth(180);
+            fabricCanvas.add(img);
+            fabricCanvas.setActiveObject(img);
+            fabricCanvas.renderAll();
+          });
+        };
+        reader.readAsDataURL(file);
+        showToast("Image loaded onto design canvas.");
+      };
+
+      const addImageFromUrl = (url) => {
+        if (!fabricCanvas || !url) return;
+        window.fabric.Image.fromURL(url, (img) => {
+          img.set({
+            left: canvasWidth / 2,
+            top: canvasHeight / 2,
+            originX: 'center',
+            originY: 'center'
+          });
+          img.scaleToWidth(180);
+          fabricCanvas.add(img);
+          fabricCanvas.setActiveObject(img);
+          fabricCanvas.renderAll();
+        }, {
+          crossOrigin: 'anonymous'
+        });
+        showToast("External graphic placed.");
+      };
+
+      const updateActiveProperty = (prop, val) => {
+        if (!fabricCanvas || !selectedElement) return;
+        selectedElement.set(prop, val);
+        fabricCanvas.renderAll();
+        setSelectedElement(fabricCanvas.getActiveObject());
+      };
+
+      const deleteSelectedElement = () => {
+        if (!fabricCanvas || !selectedElement) return;
+        fabricCanvas.remove(selectedElement);
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.renderAll();
+        setSelectedElement(null);
+        showToast("Layer deleted.");
+      };
+
+      const changeLayerDepth = (direction) => {
+        if (!fabricCanvas || !selectedElement) return;
+        if (direction === 'forward') {
+          selectedElement.bringForward();
+        } else if (direction === 'backward') {
+          selectedElement.sendBackwards();
+        } else if (direction === 'front') {
+          selectedElement.bringToFront();
+        } else if (direction === 'back') {
+          selectedElement.sendToBack();
+        }
+        fabricCanvas.renderAll();
+      };
+
+      const loadDesignToCanvas = (backgroundColor, elements) => {
+        if (!fabricCanvas) return;
+        fabricCanvas.clear();
+        setBgColor(backgroundColor || '#ffffff');
+        fabricCanvas.setBackgroundColor(backgroundColor || '#ffffff', () => {
+          fabricCanvas.renderAll();
+        });
+
+        elements.forEach((el) => {
+          const commonProps = {
+            left: el.left ?? 300,
+            top: el.top ?? 225,
+            fill: el.fill || '#1E293B',
+            angle: el.angle || 0,
+            originX: 'center',
+            originY: 'center'
+          };
+
+          let obj;
+          if (el.type === 'text' || el.type === 'i-text') {
+            obj = new window.fabric.IText(el.text || 'Double Click', {
+              ...commonProps,
+              fontSize: el.fontSize || 24,
+              fontFamily: el.fontFamily || 'sans-serif',
+              fontWeight: el.fontWeight || 'normal'
+            });
+          } else if (el.type === 'rect') {
+            obj = new window.fabric.Rect({
+              ...commonProps,
+              width: el.width || 100,
+              height: el.height || 100
+            });
+          } else if (el.type === 'circle') {
+            obj = new window.fabric.Circle({
+              ...commonProps,
+              radius: el.radius || 50
+            });
+          } else if (el.type === 'triangle') {
+            obj = new window.fabric.Triangle({
+              ...commonProps,
+              width: el.width || 100,
+              height: el.height || 100
+            });
+          } else if (el.type === 'image') {
+            window.fabric.Image.fromURL(el.src || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150', (img) => {
+              img.set({
+                ...commonProps,
+                scaleX: el.scaleX || 1,
+                scaleY: el.scaleY || 1
+              });
+              fabricCanvas.add(img);
+              fabricCanvas.renderAll();
+            }, { crossOrigin: 'anonymous' });
+            return;
+          }
+
+          if (obj) {
+            fabricCanvas.add(obj);
+          }
+        });
+
+        fabricCanvas.renderAll();
+      };
+
+      const handleSelectTemplate = (tpl) => {
+        setDesignTitle(tpl.title);
+        setCurrentDesignId(null);
+        setBgColor(tpl.backgroundColor || '#ffffff');
+        setCurrentView('editor');
+
+        setTimeout(() => {
+          loadDesignToCanvas(tpl.backgroundColor, tpl.elements);
+          showToast(`Loaded "${tpl.title}" template.`);
+        }, 400);
+      };
+
+      const handleStartBlank = () => {
+        setDesignTitle('Untitled Design');
+        setCurrentDesignId(null);
+        setBgColor('#ffffff');
+        setCurrentView('editor');
+        setTimeout(() => {
+          if (fabricCanvas) {
+            fabricCanvas.clear();
+            setBgColor('#ffffff');
+            fabricCanvas.setBackgroundColor('#ffffff', () => fabricCanvas.renderAll());
+          }
+        }, 400);
+      };
+
+      const handleSelectCustomTemplate = (saved) => {
+        setDesignTitle(saved.title);
+        setCurrentDesignId(saved.id);
+        setBgColor(saved.backgroundColor || '#ffffff');
+        setCurrentView('editor');
+
+        setTimeout(() => {
+          try {
+            const parsedElements = typeof saved.elements === 'string' 
+              ? JSON.parse(saved.elements) 
+              : saved.elements;
+            loadDesignToCanvas(saved.backgroundColor, parsedElements);
+            showToast(`Loaded custom workspace: "${saved.title}".`);
+          } catch (err) {
+            console.error("Failed to parse stored elements:", err);
+            showToast("Error parsing layout elements.", "error");
+          }
+        }, 450);
+      };
+
+      const handleSaveToCloud = async (silent = false) => {
+        if (!user) {
+          if (!silent) showToast("Sign in with email/password to save designs permanently.", "error");
+          return false;
+        }
+        if (!fabricCanvas) return false;
+
+        try {
+          const objects = fabricCanvas.getObjects();
+          const elementsArray = objects.map((obj) => {
+            const type = obj.type;
+            const serialized = {
+              type,
+              left: obj.left,
+              top: obj.top,
+              angle: obj.angle,
+              fill: obj.fill,
+              scaleX: obj.scaleX,
+              scaleY: obj.scaleY
+            };
+
+            if (type === 'text' || type === 'i-text') {
+              serialized.text = obj.text;
+              serialized.fontSize = obj.fontSize;
+              serialized.fontFamily = obj.fontFamily;
+              serialized.fontWeight = obj.fontWeight;
+            } else if (type === 'rect') {
+              serialized.width = obj.width;
+              serialized.height = obj.height;
+            } else if (type === 'circle') {
+              serialized.radius = obj.radius;
+            } else if (type === 'triangle') {
+              serialized.width = obj.width;
+              serialized.height = obj.height;
+            } else if (type === 'image') {
+              serialized.src = obj._element?.src || '';
+            }
+
+            return serialized;
+          });
+
+          const payload = {
+            title: designTitle || 'Untitled Design',
+            backgroundColor: bgColor,
+            elements: JSON.stringify(elementsArray),
+            updatedAt: Date.now()
+          };
+
+          if (user.uid === 'guest-local') {
+            const localSavedStr = localStorage.getItem(`nestless_local_templates_${appId}`);
+            let localSaved = localSavedStr ? JSON.parse(localSavedStr) : [];
+            
+            if (currentDesignId && currentDesignId.toString().startsWith('local-')) {
+              localSaved = localSaved.map(item => item.id === currentDesignId ? { ...payload, id: currentDesignId } : item);
+              if (!silent) showToast("Design updated successfully in Local Storage!");
+            } else {
+              const newId = `local-${Date.now()}`;
+              localSaved.push({ ...payload, id: newId });
+              setCurrentDesignId(newId);
+              if (!silent) showToast("Saved to Local Storage. Sign in to back up on Cloud! ✨");
+            }
+            localStorage.setItem(`nestless_local_templates_${appId}`, JSON.stringify(localSaved));
+            setCustomTemplates(localSaved);
+            return true;
+          }
+
+          if (currentDesignId) {
+            const templateRef = ref(db, `artifacts/${appId}/users/${user.uid}/custom_templates/${currentDesignId}`);
+            await set(templateRef, payload);
+            if (!silent) showToast("Design updated successfully in RTDB cloud!");
+          } else {
+            const templatesRef = ref(db, `artifacts/${appId}/users/${user.uid}/custom_templates`);
+            const newTemplateRef = push(templatesRef);
+            await set(newTemplateRef, payload);
+            setCurrentDesignId(newTemplateRef.key);
+            if (!silent) showToast("Design saved as new custom template in RTDB!");
+          }
+          return true;
+        } catch (err) {
+          console.error(err);
+          if (!silent) showToast("Error syncing with Firebase Realtime Database.", "error");
+          return false;
+        }
+      };
+
+      const handleDeleteCustomTemplate = async (id, e) => {
+        e.stopPropagation();
+        if (!user) return;
+
+        if (user.uid === 'guest-local') {
+          try {
+            const localSavedStr = localStorage.getItem(`nestless_local_templates_${appId}`);
+            if (localSavedStr) {
+              let localSaved = JSON.parse(localSavedStr);
+              localSaved = localSaved.filter(item => item.id !== id);
+              localStorage.setItem(`nestless_local_templates_${appId}`, JSON.stringify(localSaved));
+              setCustomTemplates(localSaved);
+              showToast("Deleted local template.");
+            }
+          } catch (err) {
+            showToast("Failed to delete local template.", "error");
+          }
+          return;
+        }
+
+        try {
+          const templateRef = ref(db, `artifacts/${appId}/users/${user.uid}/custom_templates/${id}`);
+          await remove(templateRef);
+          showToast("Deleted saved template.");
+        } catch (err) {
+          showToast("Failed to delete design.", "error");
+        }
+      };
+
+      const handleDownloadPNG = () => {
+        if (!fabricCanvas) return;
+        const active = fabricCanvas.getActiveObject();
+        if (active) {
+          fabricCanvas.discardActiveObject();
+          fabricCanvas.renderAll();
+        }
+
+        const dataURL = fabricCanvas.toDataURL({
+          format: 'png',
+          quality: 1.0
+        });
+
+        const link = document.createElement('a');
+        link.download = `${designTitle.toLowerCase().replace(/\s+/g, '-') || 'design'}.png`;
+        link.href = dataURL;
+        link.click();
+
+        if (active) {
+          fabricCanvas.setActiveObject(active);
+          fabricCanvas.renderAll();
+        }
+        showToast("Successfully compiled and downloaded high-quality PNG.");
+      };
+
+      const handleDownloadSVG = () => {
+        if (!fabricCanvas) return;
+        const active = fabricCanvas.getActiveObject();
+        if (active) {
+          fabricCanvas.discardActiveObject();
+          fabricCanvas.renderAll();
+        }
+
+        const svgContent = fabricCanvas.toSVG();
+        const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.download = `${designTitle.toLowerCase().replace(/\s+/g, '-') || 'design'}.svg`;
+        link.href = url;
+        link.click();
+
+        URL.revokeObjectURL(url);
+
+        if (active) {
+          fabricCanvas.setActiveObject(active);
+          fabricCanvas.renderAll();
+        }
+        showToast("Successfully compiled and downloaded vector SVG! Ready for Canva import.");
+      };
+
+      const handleOpenExportModal = () => {
+        setShowExportModal(true);
+      };
+
+      const handleExecuteExportAndSave = async () => {
+        setExportingProgress(true);
+        
+        if (alsoSaveToCloud) {
+          if (!user || user.isAnonymous) {
+            showToast("Skipped template save: You must be signed in with email/password to save.", "error");
+          } else {
+            await handleSaveToCloud(true);
+            showToast("Added template to your Nestless Library! ✨");
+          }
+        }
+
+        if (exportFormat === 'svg') {
+          handleDownloadSVG();
+        } else {
+          handleDownloadPNG();
+        }
+
+        setExportingProgress(false);
+        setShowExportModal(false);
+      };
+
+      const handleGenerateAILayout = async () => {
+        if (!aiLayoutPrompt.trim()) {
+          showToast("Enter a prompt describing the design first.", "error");
+          return;
+        }
+        
+        setGeneratingLayout(true);
+        const apiKey = ""; 
+
+        const systemPrompt = `You are a professional graphic designer expert. Create a custom template JSON based on the user request.
+The JSON must be compatible with a canvas of size 600x450. Coordinates 'left' must be within 50 to 550 and 'top' within 50 to 400.
+Always position elements centered relative to their origin.
+Output MUST strictly match this JSON schema:
+{
+  "backgroundColor": "string (hex color)",
+  "elements": [
+    {
+      "type": "text" | "rect" | "circle" | "triangle",
+      "text": "string (only for text types)",
+      "left": number,
+      "top": number,
+      "width": number (for rect, triangle),
+      "height": number (for rect, triangle),
+      "radius": number (for circle),
+      "fill": "string (color hex code)",
+      "fontSize": number (14 to 48, for text types),
+      "fontFamily": "string (Arial, Georgia, Impact, Courier New)",
+      "fontWeight": "string (normal or bold)"
+    }
+  ]
+}
+Provide a high-quality palette and clean, beautiful modern alignment. Respond ONLY with valid JSON string. Do not include markdown code block characters like \`\`\`json.`;
+
+        let attempts = 0;
+        let delay = 1000;
+        let success = false;
+        let rawText = "";
+
+        while (attempts < 5 && !success) {
+          try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: `${systemPrompt}\n\nUser Design Request: "${aiLayoutPrompt}"`
+                  }]
+                }]
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error(`API returned HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              success = true;
+            } else {
+              throw new Error("Empty candidate payload returned from Gemini.");
+            }
+          } catch (err) {
+            attempts++;
+            if (attempts >= 5) {
+              setGeneratingLayout(false);
+              showToast("Gemini API connection timed out. Please check your internet connection.", "error");
+              return;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2; 
+          }
+        }
+
+        try {
+          let cleanText = rawText.trim();
+          if (cleanText.startsWith('```json')) {
+            cleanText = cleanText.substring(7);
+          }
+          if (cleanText.startsWith('```')) {
+            cleanText = cleanText.substring(3);
+          }
+          if (cleanText.endsWith('```')) {
+            cleanText = cleanText.substring(0, cleanText.length - 3);
+          }
+          
+          const parsed = JSON.parse(cleanText.trim());
+          
+          if (parsed && parsed.elements) {
+            loadDesignToCanvas(parsed.backgroundColor, parsed.elements);
+            showToast("Gemini parsed your prompt and generated a layout successfully!");
+            setAiLayoutPrompt('');
+          } else {
+            throw new Error("Invalid design structure schema.");
+          }
+        } catch (parseErr) {
+          console.error("Gemini Response parsing error. Raw output: ", rawText, parseErr);
+          showToast("Gemini structured layout parse issue. Re-try or clarify the prompt.", "error");
+        } finally {
+          setGeneratingLayout(false);
+        }
+      };
+
+      const handleGenerateAIImage = async () => {
+        if (!aiImagePrompt.trim()) {
+          showToast("Describe the graphic you need generated.", "error");
+          return;
+        }
+
+        setGeneratingImage(true);
+        const apiKey = ""; 
+
+        let attempts = 0;
+        let delay = 1000;
+        let success = false;
+        let imgBase64 = "";
+
+        while (attempts < 5 && !success) {
+          try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                instances: [{ prompt: aiImagePrompt }],
+                parameters: { sampleCount: 1 }
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            imgBase64 = result.predictions?.[0]?.bytesBase64Encoded;
+            if (imgBase64) {
+              success = true;
+            } else {
+              throw new Error("Empty base64 prediction.");
+            }
+          } catch (err) {
+            attempts++;
+            if (attempts >= 5) {
+              setGeneratingImage(false);
+              showToast("Imagen API timed out. Please retry in a few moments.", "error");
+              return;
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+          }
+        }
+
+        try {
+          const fullUrl = `data:image/png;base64,${imgBase64}`;
+          addImageFromUrl(fullUrl);
+          showToast("Successfully added stock illustration to canvas workspace!");
+          setAiImagePrompt('');
+        } catch (err) {
+          showToast("Failed to compile graphic stream.", "error");
+        } finally {
+          setGeneratingImage(false);
+        }
+      };
+
+      const renderToasts = () => (
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 border transition-all duration-300 transform scale-100 animate-slide-in ${
+                toast.type === 'error'
+                  ? 'bg-rose-50 text-rose-800 border-rose-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              }`}
+            >
+              <span className="text-lg">
+                {toast.type === 'error' ? '⚠️' : '✨'}
+              </span>
+              <p className="text-sm font-medium leading-relaxed">{toast.message}</p>
+            </div>
+          ))}
+        </div>
+      );
+
+      const renderNavbar = () => (
+        <nav className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('landing')}>
+            <div className="bg-indigo-600 p-2 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Nestless</span>
+              <span className="text-xs block text-slate-400">Canva for Beginners</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {currentView !== 'landing' && (
+              <button 
+                onClick={() => setCurrentView('landing')}
+                className="text-slate-300 hover:text-white text-sm font-semibold transition"
+              >
+                Features
+              </button>
+            )}
+            {currentView !== 'dashboard' && user && (
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-semibold px-4 py-2 rounded-lg transition"
+              >
+                Dashboard
+              </button>
+            )}
+
+            {user ? (
+              <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
+                <div className="text-right hidden sm:block">
+                  <span className="text-xs text-slate-400 block">Logged in as</span>
+                  <span className="text-xs font-semibold text-slate-200">
+                    {user.isAnonymous ? 'Guest User' : user.email}
+                  </span>
+                </div>
+                {!user.isAnonymous ? (
+                  <button 
+                    onClick={handleSignOut}
+                    className="bg-indigo-950 hover:bg-rose-950 text-rose-300 border border-rose-900/40 text-xs px-3 py-1.5 rounded-md transition"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setAuthMode('login');
+                      setCurrentView('auth');
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-md transition font-semibold"
+                  >
+                    Sign In / Save Cloud
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={() => setCurrentView('auth')}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
+              >
+                Start Designing
+              </button>
+            )}
+          </div>
+        </nav>
+      );
+
+      return (
+        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+          {renderNavbar()}
+          {renderToasts()}
+
+          {/* --- EXPORT & TEMPLATE SAVE DIALOG MODAL --- */}
+          {showExportModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 animate-slide-in">
+                <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6 text-white text-center relative">
+                  <h3 className="text-xl font-bold">Export & Save Options</h3>
+                  <p className="text-indigo-100 text-xs mt-1">Download editable vectors or high-quality images</p>
+                  <button 
+                    onClick={() => setShowExportModal(false)}
+                    className="absolute top-4 right-4 text-white/80 hover:text-white text-xl transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Design / Template Title</label>
+                    <input
+                      type="text"
+                      value={designTitle}
+                      onChange={(e) => setDesignTitle(e.target.value)}
+                      placeholder="Enter design title..."
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Select Download Format</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setExportFormat('png')}
+                        className={`p-3.5 rounded-xl border text-left transition ${
+                          exportFormat === 'png'
+                            ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 ring-2 ring-indigo-500/20'
+                            : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="block text-sm font-bold">🖼️ PNG Image</span>
+                        <span className="block text-[10px] text-slate-400 mt-1">Best for high-quality shares & posts</span>
+                      </button>
+
+                      <button
+                        onClick={() => setExportFormat('svg')}
+                        className={`p-3.5 rounded-xl border text-left transition ${
+                          exportFormat === 'svg'
+                            ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 ring-2 ring-indigo-500/20'
+                            : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="block text-sm font-bold">📐 SVG Vector</span>
+                        <span className="block text-[10px] text-slate-400 mt-1">Editable layers (Import to Canva/Figma)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="alsoSaveCloudToggle"
+                      checked={alsoSaveToCloud}
+                      onChange={(e) => setAlsoSaveToCloud(e.target.checked)}
+                      className="w-5 h-5 accent-indigo-600 mt-0.5 cursor-pointer rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="alsoSaveCloudToggle" className="text-sm font-bold text-slate-800 cursor-pointer block">
+                        Save as template in RTDB Library
+                      </label>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        This adds a copy of this canvas design directly to your **Dashboard templates** under "Your Cloud Designs" so you can reload or edit it later.
+                      </p>
+                      {(!user || user.isAnonymous) && (
+                        <span className="text-[10px] text-amber-600 font-bold block mt-2 bg-amber-50 border border-amber-100 px-2 py-1 rounded">
+                          ⚠️ Log in required to save as cloud templates.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setShowExportModal(false)}
+                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-xl text-sm transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleExecuteExportAndSave}
+                      disabled={exportingProgress}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl text-sm shadow-lg hover:shadow-indigo-500/10 transition flex items-center justify-center gap-2"
+                    >
+                      {exportingProgress ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
+                          <span>Exporting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>📥</span>
+                          <span>Export & Download</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- VIEW 1: LANDING PAGE --- */}
+          {currentView === 'landing' && (
+            <div className="flex-grow">
+              <section className="bg-slate-950 text-white py-20 px-6 text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_45%)]" />
+                <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
+                
+                <div className="max-w-4xl mx-auto relative z-10">
+                  <span className="bg-indigo-900/60 text-indigo-300 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-500/30 uppercase tracking-widest inline-block mb-4">
+                    🎨 Simple & Lightweight Design
+                  </span>
+                  <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none mb-6">
+                    Design everything. <br />
+                    <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">No complexity required.</span>
+                  </h1>
+                  <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+                    Nestless is a simplified Canva-like template platform powered by Firebase Realtime Database and Google Gemini AI design generators.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button
+                      onClick={() => {
+                        if (user) {
+                          setCurrentView('dashboard');
+                        } else {
+                          setCurrentView('auth');
+                        }
+                      }}
+                      className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-indigo-500/20 transform hover:-translate-y-0.5 transition"
+                    >
+                      Start Designing for Free
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentView('dashboard');
+                      }}
+                      className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold px-8 py-4 rounded-xl transition"
+                    >
+                      Explore Templates
+                    </button>
+                  </div>
+
+                  <div className="mt-16 border border-slate-800 bg-slate-900/60 rounded-2xl p-4 shadow-2xl backdrop-blur max-w-3xl mx-auto">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-rose-500 block"></span>
+                        <span className="w-3 h-3 rounded-full bg-amber-500 block"></span>
+                        <span className="w-3 h-3 rounded-full bg-emerald-500 block"></span>
+                        <span className="text-xs text-slate-500 ml-2">Nestless Professional Workspace</span>
+                      </div>
+                      <span className="text-xs bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded border border-indigo-900">v1.2 Stable</span>
+                    </div>
+                    <div className="aspect-video bg-slate-950 rounded-xl flex items-center justify-center border border-slate-800/80 p-6">
+                      <div className="text-center">
+                        <p className="text-xs text-indigo-400 font-semibold mb-2">TRY NESTLESS ARTIFICIAL INTELLIGENCE LAYOUTS</p>
+                        <p className="text-2xl font-bold mb-4">"Create Instagram sale post for fashion store"</p>
+                        <div className="flex justify-center gap-2">
+                          <span className="px-3 py-1 bg-slate-900 text-xs rounded border border-slate-800 text-slate-400">🛍️ Text elements</span>
+                          <span className="px-3 py-1 bg-slate-900 text-xs rounded border border-slate-800 text-slate-400">📐 Fills & FONT</span>
+                          <span className="px-3 py-1 bg-slate-900 text-xs rounded border border-slate-800 text-slate-400">🔮 Vector Coordinates</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </section>
+
+              <section className="py-20 px-6 max-w-7xl mx-auto">
+                <div className="text-center mb-16">
+                  <h2 className="text-3xl font-bold tracking-tight">Everything you need to craft masterpieces</h2>
+                  <p className="text-slate-500 mt-2">Power and agility packaged into a lightweight, clean browser designer.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                  <div className="bg-white border border-slate-200 p-8 rounded-2xl hover:shadow-xl transition duration-300">
+                    <div className="bg-indigo-50 w-12 h-12 rounded-xl flex items-center justify-center text-indigo-600 mb-6 text-2xl">⚡</div>
+                    <h3 className="text-xl font-bold mb-3">Instant Template Systems</h3>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      Click any template, and load full editable text, shapes, angles, and custom design bounds straight into fabric canvas layout structures. No wait times.
+                    </p>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 p-8 rounded-2xl hover:shadow-xl transition duration-300">
+                    <div className="bg-indigo-50 w-12 h-12 rounded-xl flex items-center justify-center text-indigo-600 mb-6 text-2xl">🔮</div>
+                    <h3 className="text-xl font-bold mb-3">AI Layout Generator</h3>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      Write design prompts like "Gaming banner" and watch Google's high-speed Gemini model translate it into valid canvas layout coordinates instantly.
+                    </p>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 p-8 rounded-2xl hover:shadow-xl transition duration-300">
+                    <div className="bg-indigo-50 w-12 h-12 rounded-xl flex items-center justify-center text-indigo-600 mb-6 text-2xl">☁️</div>
+                    <h3 className="text-xl font-bold mb-3">Realtime Database Saving</h3>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      Work freely on blank canvas structures or templates. Safely synchronize, retrieve, and delete customized creations with Firebase RTDB.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* --- VIEW 2: LOGIN / REGISTER PANEL --- */}
+          {currentView === 'auth' && (
+            <div className="flex-grow flex items-center justify-center px-4 py-16 bg-slate-900">
+              <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+                <div className="bg-indigo-600 p-8 text-center text-white relative">
+                  <div className="absolute top-4 left-4">
+                    <button 
+                      onClick={() => setCurrentView('landing')}
+                      className="text-indigo-200 hover:text-white transition text-xs font-semibold flex items-center gap-1"
+                    >
+                      ← Home
+                    </button>
+                  </div>
+                  <h2 className="text-2xl font-bold mt-4">Welcome to Nestless</h2>
+                  <p className="text-indigo-100 text-sm mt-1">Unlock cloud templates & cloud-sync features</p>
+                </div>
+
+                <div className="p-8">
+                  <div className="flex border-b border-slate-200 mb-6">
+                    <button
+                      onClick={() => setAuthMode('login')}
+                      className={`flex-1 pb-3 text-sm font-semibold text-center border-b-2 transition ${
+                        authMode === 'login' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'
+                      }`}
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => setAuthMode('signup')}
+                      className={`flex-1 pb-3 text-sm font-semibold text-center border-b-2 transition ${
+                        authMode === 'signup' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'
+                      }`}
+                    >
+                      Register Account
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAuthSubmit} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        placeholder="you@domain.com"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-indigo-500/15 transition mt-2"
+                    >
+                      {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                    </button>
+                  </form>
+
+                  <div className="relative flex py-4 items-center">
+                    <div className="flex-grow border-t border-slate-200"></div>
+                    <span className="flex-shrink mx-4 text-xs text-slate-400 uppercase tracking-wider">or</span>
+                    <div className="flex-grow border-t border-slate-200"></div>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        await signInAnonymously(auth);
+                        showToast("Logged in as Guest Explorer.");
+                        setCurrentView('dashboard');
+                      } catch (e) {
+                        showToast(e.message, "error");
+                      }
+                    }}
+                    className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition text-sm"
+                  >
+                    Continue as anonymous Guest ⚡
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- VIEW 3: SYSTEM CREATOR DASHBOARD --- */}
+          {currentView === 'dashboard' && (
+            <div className="flex-grow flex">
+              <aside className="w-64 bg-slate-900 text-slate-200 border-r border-slate-800 p-6 flex flex-col justify-between hidden md:flex">
+                <div>
+                  <div className="mb-8">
+                    <span className="text-xs uppercase font-bold tracking-widest text-slate-500">Workspace Explorer</span>
+                    <button
+                      onClick={handleStartBlank}
+                      className="w-full mt-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-indigo-500/10 flex items-center justify-center gap-2 transition"
+                    >
+                      <span>➕</span> Blank Template
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs uppercase font-bold tracking-widest text-slate-500 block mb-2">Category Filter</span>
+                    {['All', 'Social Media', 'Posters', 'Logos', 'Thumbnails'].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold transition ${
+                          activeCategory === cat
+                            ? 'bg-indigo-600 text-white'
+                            : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {cat === 'All' && '🌟 All Layouts'}
+                        {cat === 'Social Media' && '📱 Social Media'}
+                        {cat === 'Posters' && '🎨 Posters'}
+                        {cat === 'Logos' && '⚡ Corporate Logos'}
+                        {cat === 'Thumbnails' && '🎮 Thumbnails'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-800 pt-6">
+                  <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-800">
+                    <p className="text-xs font-bold text-indigo-400">GEMINI AI INTEGRATION</p>
+                    <p className="text-xs text-slate-400 mt-1">Generate complete canvas templates & styles directly from user prompt descriptions inside editor panels!</p>
+                  </div>
+                </div>
+              </aside>
+
+              <main className="flex-1 p-6 md:p-10 bg-slate-50 overflow-y-auto">
+                <div className="flex md:hidden flex-wrap items-center gap-2 mb-6">
+                  <button
+                    onClick={handleStartBlank}
+                    className="bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded-lg"
+                  >
+                    + Blank Template
+                  </button>
+                  {['All', 'Social Media', 'Posters', 'Logos', 'Thumbnails'].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold ${
+                        activeCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold tracking-tight">Design Workspace</h2>
+                  <p className="text-slate-500 text-sm">Select a professional prebuilt mockup, start from absolute zero, or construct designs from AI.</p>
+                </div>
+
+                {user && (
+                  <div className="mb-10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-lg">☁️</span>
+                      <h3 className="text-lg font-bold text-slate-800">Your Cloud Designs ({customTemplates.length})</h3>
+                    </div>
+
+                    {loadingCustom ? (
+                      <div className="py-6 text-center text-slate-400 text-sm animate-pulse">Loading saved assets...</div>
+                    ) : customTemplates.length === 0 ? (
+                      <div className="border-2 border-dashed border-slate-200 bg-white p-8 rounded-2xl text-center text-slate-500">
+                        <p className="text-sm">You haven't saved any custom cloud designs yet.</p>
+                        <p className="text-xs text-slate-400 mt-1">Start from templates, design, and click "Save Cloud Design" or export as template.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {customTemplates.map((saved) => (
+                          <div
+                            key={saved.id}
+                            onClick={() => handleSelectCustomTemplate(saved)}
+                            className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xl text-indigo-600">
+                                🎨
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-slate-800 group-hover:text-indigo-600 transition text-sm truncate max-w-[140px]">{saved.title}</h4>
+                                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Custom Workspace</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={(e) => handleDeleteCustomTemplate(saved.id, e)}
+                              className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded transition"
+                              title="Delete design"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex items-center gap-2 mb-4 border-t border-slate-200 pt-8">
+                    <span className="text-lg">📚</span>
+                    <h3 className="text-lg font-bold text-slate-800">Mock Pre-built Templates Catalog</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {SAMPLE_TEMPLATES
+                      .filter((tpl) => activeCategory === 'All' || tpl.category === activeCategory)
+                      .map((tpl) => (
+                        <div
+                          key={tpl.id}
+                          onClick={() => handleSelectTemplate(tpl)}
+                          className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg cursor-pointer transform hover:-translate-y-1 transition duration-300 flex flex-col group"
+                        >
+                          <div className="h-40 bg-slate-900 relative flex items-center justify-center text-5xl select-none group-hover:scale-105 transition duration-500">
+                            {tpl.thumbnail}
+                            <div className="absolute top-3 left-3 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-slate-700 uppercase tracking-wider">
+                              {tpl.category}
+                            </div>
+                          </div>
+                          <div className="p-5 flex-grow">
+                            <h4 className="font-bold text-slate-800 text-sm mb-1 group-hover:text-indigo-600 transition">{tpl.title}</h4>
+                            <p className="text-xs text-slate-400">Fully layered, vector coordinates loaded dynamically.</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </main>
+            </div>
+          )}
+
+          {/* --- VIEW 4: THE MULTI-LAYER CANV EDITOR --- */}
+          {currentView === 'editor' && (
+            <div className="flex-grow flex flex-col md:flex-row bg-slate-100">
+              <div className="w-full bg-slate-900 text-white border-b border-slate-800 px-6 py-3 flex items-center justify-between md:hidden">
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="text-slate-300 text-xs font-bold"
+                >
+                  ← Back
+                </button>
+                <span className="text-xs font-bold">{designTitle}</span>
+                <button
+                  onClick={handleOpenExportModal}
+                  className="bg-indigo-600 text-white text-xs px-2 py-1 rounded font-bold"
+                >
+                  Export
+                </button>
+              </div>
+
+              <aside className="w-full md:w-80 bg-slate-900 text-white border-r border-slate-800 flex flex-col flex-shrink-0">
+                <div className="flex border-b border-slate-800 bg-slate-950 text-slate-400">
+                  <button
+                    onClick={() => setEditorTab('templates')}
+                    className={`flex-1 py-3 text-xs font-bold transition ${
+                      editorTab === 'templates' ? 'bg-slate-900 text-white border-b-2 border-indigo-500' : 'hover:text-white'
+                    }`}
+                  >
+                    Catalog
+                  </button>
+                  <button
+                    onClick={() => setEditorTab('elements')}
+                    className={`flex-1 py-3 text-xs font-bold transition ${
+                      editorTab === 'elements' ? 'bg-slate-900 text-white border-b-2 border-indigo-500' : 'hover:text-white'
+                    }`}
+                  >
+                    Elements
+                  </button>
+                  <button
+                    onClick={() => setEditorTab('ai')}
+                    className={`flex-1 py-3 text-xs font-bold transition ${
+                      editorTab === 'ai' ? 'bg-slate-900 text-white border-b-2 border-indigo-500' : 'hover:text-white'
+                    }`}
+                  >
+                    AI Generator
+                  </button>
+                </div>
+
+                <div className="flex-grow p-6 overflow-y-auto max-h-[400px] md:max-h-[calc(100vh-140px)] font-sans text-white">
+                  {editorTab === 'templates' && (
+                    <div className="space-y-4">
+                      <h3 className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-2">Preset Mockups</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {SAMPLE_TEMPLATES.map((tpl) => (
+                          <div
+                            key={tpl.id}
+                            onClick={() => {
+                              loadDesignToCanvas(tpl.backgroundColor, tpl.elements);
+                              setBgColor(tpl.backgroundColor);
+                              showToast(`Injected template: ${tpl.title}`);
+                            }}
+                            className="bg-slate-800 border border-slate-700/60 rounded-xl p-3 text-center cursor-pointer hover:border-indigo-500 transition"
+                          >
+                            <span className="text-2xl block mb-1">{tpl.thumbnail}</span>
+                            <span className="text-[10px] font-bold text-slate-200 block truncate">{tpl.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {editorTab === 'elements' && (
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-2.5">Text Styles</h4>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => addTextToCanvas('Double-Click Title', { fontSize: 36, fontWeight: 'bold' })}
+                            className="w-full bg-slate-800 hover:bg-slate-700 text-left px-4 py-2.5 rounded-xl border border-slate-700/60 text-sm font-bold flex justify-between items-center transition"
+                          >
+                            <span>Heading</span>
+                            <span className="text-xs text-indigo-400">Add Title</span>
+                          </button>
+                          <button
+                            onClick={() => addTextToCanvas('Sub-Heading info', { fontSize: 22 })}
+                            className="w-full bg-slate-800 hover:bg-slate-700 text-left px-4 py-2 rounded-xl border border-slate-700/60 text-xs font-semibold flex justify-between items-center transition"
+                          >
+                            <span>Subheading</span>
+                            <span className="text-xs text-indigo-400">Add Text</span>
+                          </button>
+                          <button
+                            onClick={() => addTextToCanvas('Double-click body paragraph text details', { fontSize: 14 })}
+                            className="w-full bg-slate-800 hover:bg-slate-700 text-left px-4 py-1.5 rounded-xl border border-slate-700/60 text-[11px] flex justify-between items-center transition"
+                          >
+                            <span>Body text block</span>
+                            <span className="text-xs text-indigo-400">Add paragraph</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-2.5">Shapes & Objects</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => addShapeToCanvas('rect')}
+                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3 rounded-xl flex flex-col items-center gap-1 transition text-xs font-semibold"
+                          >
+                            <span className="w-5 h-5 bg-indigo-500 rounded-sm"></span>
+                            Rectangle
+                          </button>
+                          <button
+                            onClick={() => addShapeToCanvas('circle')}
+                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3 rounded-xl flex flex-col items-center gap-1 transition text-xs font-semibold"
+                          >
+                            <span className="w-5 h-5 bg-indigo-500 rounded-full"></span>
+                            Circle
+                          </button>
+                          <button
+                            onClick={() => addShapeToCanvas('triangle')}
+                            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3 rounded-xl flex flex-col items-center gap-1 transition text-xs font-semibold"
+                          >
+                            <span className="text-indigo-400 text-lg">▲</span>
+                            Triangle
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-2.5">Local Image upload</h4>
+                        <label className="w-full bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800/80 hover:border-indigo-600 border-dashed rounded-xl py-4 flex flex-col items-center justify-center cursor-pointer transition">
+                          <span className="text-indigo-400 text-lg mb-1">📁</span>
+                          <span className="text-xs font-semibold text-slate-200">Upload custom graphic</span>
+                          <span className="text-[10px] text-slate-400 mt-1">PNG, JPG formats supported</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleCustomImageUpload}
+                          />
+                        </label>
+
+                        <div className="mt-4">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block mb-1">Place standard online URL</span>
+                          <div className="flex gap-1.5">
+                            <input
+                              type="text"
+                              value={imageUrlInput}
+                              onChange={(e) => setImageUrlInput(e.target.value)}
+                              placeholder="[https://images.unsplash.com/](https://images.unsplash.com/)..."
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  addImageFromUrl(imageUrlInput);
+                                  setImageUrlInput('');
+                                }
+                              }}
+                              className="flex-1 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-white"
+                            />
+                            <button
+                              onClick={() => {
+                                addImageFromUrl(imageUrlInput);
+                                pointerImageUrlInput('');
+                              }}
+                              className="bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1.5 rounded-lg text-xs font-bold transition"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {editorTab === 'ai' && (
+                    <div className="space-y-6 font-sans text-white">
+                      <div className="bg-indigo-950/40 border border-indigo-900/60 rounded-xl p-4">
+                        <span className="text-xs font-bold text-indigo-400 tracking-wider uppercase">✨ Gemini AI Layout Generator</span>
+                        <p className="text-[11px] text-slate-300 mt-1 mb-3">Gemini dynamically constructs precise vector shapes, coordinates, and custom palettes mapped straight to active layers.</p>
+                        
+                        <textarea
+                          rows="3"
+                          value={aiLayoutPrompt}
+                          onChange={(e) => setAiLayoutPrompt(e.target.value)}
+                          placeholder="e.g. 'Create Instagram sale post for fashion store' or 'Modern startup logo'"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-100 placeholder-slate-500 resize-none mb-3"
+                        />
+
+                        <button
+                          onClick={handleGenerateAILayout}
+                          disabled={generatingLayout}
+                          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow"
+                        >
+                          {generatingLayout ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
+                              <span>Compiling Layout...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🔮</span>
+                              <span>Generate Design</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-4">
+                        <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase">🎨 AI Stock Graphic Generator</span>
+                        <p className="text-[11px] text-slate-300 mt-1 mb-3">Uses Google's image generation models to compile bespoke illustrations and photos.</p>
+                        
+                        <textarea
+                          rows="2"
+                          value={aiImagePrompt}
+                          onChange={(e) => setAiImagePrompt(e.target.value)}
+                          placeholder="e.g. 'cute minimalist illustration of a coffee bean on dark background'"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 outline-none text-slate-100 placeholder-slate-500 resize-none mb-3"
+                        />
+
+                        <button
+                          onClick={handleGenerateAIImage}
+                          disabled={generatingImage}
+                          className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow"
+                        >
+                          {generatingImage ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
+                              <span>Generating Asset...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🎨</span>
+                              <span>Generate Stock Image</span>
+                            </>
+                          )}
+                        </button>
+                        
+                        <p className="text-[9px] text-slate-400 mt-2 text-center font-sans">Utilized model: gemini-2.5-flash-image-preview</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </aside>
+
+              <main className="flex-1 p-6 flex flex-col items-center justify-center overflow-auto">
+                <div className="w-full max-w-[620px] bg-white border border-slate-200 shadow-sm rounded-2xl px-5 py-3 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3 hidden md:flex">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setCurrentView('dashboard')}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 text-xs font-bold px-3.5 py-2 rounded-xl transition"
+                    >
+                      ← Dashboard
+                    </button>
+                    <input
+                      type="text"
+                      value={designTitle}
+                      onChange={(e) => setDesignTitle(e.target.value)}
+                      className="bg-transparent text-sm font-bold text-slate-800 border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none px-1 py-0.5 transition"
+                      placeholder="Design Title"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleSaveToCloud(false)}
+                      className="bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 hover:border-indigo-100 text-xs font-bold px-4 py-2 rounded-xl transition"
+                    >
+                      Save Cloud Design
+                    </button>
+                    <button
+                      onClick={handleOpenExportModal}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg hover:shadow-indigo-500/10 transition"
+                    >
+                      Download PNG / SVG
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-200 p-4 sm:p-8 rounded-3xl shadow-xl border border-slate-300/40 relative">
+                  <div 
+                    className="overflow-hidden rounded-2xl shadow-2xl bg-white relative"
+                    style={{ width: canvasWidth, height: canvasHeight }}
+                  >
+                    <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] bg-[size:16px_16px]" />
+                    <canvas id="nestless-editor-canvas" ref={canvasRef} />
+                  </div>
+
+                  <div className="absolute -bottom-6 left-0 right-0 text-center">
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Canvas Workspace Grid (600 × 450 Ratio)</span>
+                  </div>
+                </div>
+              </main>
+
+              <aside className="w-full md:w-64 bg-slate-900 border-l border-slate-800 text-white p-6 flex-shrink-0">
+                <h3 className="text-xs uppercase font-bold tracking-widest text-slate-500 mb-4">Properties Inspector</h3>
+
+                {selectedElement ? (
+                  <div className="space-y-6">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1">Selected Element</span>
+                      <div className="bg-slate-800 border border-slate-700 text-indigo-400 text-xs font-mono font-bold px-3 py-1.5 rounded-lg inline-block uppercase">
+                        {selectedElement.type}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1.5">Color Fill</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={selectedElement.fill || '#000000'}
+                          onChange={(e) => updateActiveProperty('fill', e.target.value)}
+                          className="w-10 h-10 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={selectedElement.fill || ''}
+                          onChange={(e) => updateActiveProperty('fill', e.target.value)}
+                          className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-slate-300 w-24 focus:ring-1 focus:ring-indigo-500 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {(selectedElement.type === 'text' || selectedElement.type === 'i-text') && (
+                      <div className="space-y-4 pt-4 border-t border-slate-800">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block mb-1">Font Family</span>
+                          <select
+                            value={selectedElement.fontFamily || 'Arial'}
+                            onChange={(e) => updateActiveProperty('fontFamily', e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none text-slate-200"
+                          >
+                            <option value="Arial">Arial</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Impact">Impact</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block mb-1">Font Size</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              value={selectedElement.fontSize || 24}
+                              onChange={(e) => updateActiveProperty('fontSize', parseInt(e.target.value, 10))}
+                              className="flex-grow accent-indigo-500"
+                            />
+                            <span className="text-xs text-slate-300 font-bold w-6">{selectedElement.fontSize}</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block mb-1">Font Weight</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => updateActiveProperty('fontWeight', selectedElement.fontWeight === 'bold' ? 'normal' : 'bold')}
+                              className={`flex-1 py-1 px-3 rounded text-xs font-semibold border ${
+                                selectedElement.fontWeight === 'bold' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300'
+                              }`}
+                            >
+                              Bold
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-slate-800">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-2">Layer Management</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => changeLayerDepth('forward')}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-1.5 rounded-lg transition"
+                          title="Bring Up One Step"
+                        >
+                          Up ↑
+                        </button>
+                        <button
+                          onClick={() => changeLayerDepth('backward')}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-1.5 rounded-lg transition"
+                          title="Send Down One Step"
+                        >
+                          Down ↓
+                        </button>
+                        <button
+                          onClick={() => changeLayerDepth('front')}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-1.5 rounded-lg transition font-semibold"
+                          title="Bring to absolute front"
+                        >
+                          To Front
+                        </button>
+                        <button
+                          onClick={() => changeLayerDepth('back')}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-1.5 rounded-lg transition font-semibold"
+                          title="Send to absolute back"
+                        >
+                          To Back
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-800">
+                      <button
+                        onClick={deleteSelectedElement}
+                        className="w-full bg-rose-950/40 hover:bg-rose-950 border border-rose-900/40 text-rose-300 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2"
+                      >
+                        <span>🗑️</span>
+                        <span>Delete Layer</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-slate-800/40 border border-slate-800 p-4 rounded-xl text-center">
+                      <span className="text-xl block mb-1">🖱️</span>
+                      <p className="text-xs text-slate-400 font-medium">Select any element on the canvas to inspect & change its color, font family, sizes, and layering depth.</p>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-800">
+                      <span className="text-[10px] text-slate-400 font-bold block mb-1.5">Canvas Base Color</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={bgColor}
+                          onChange={(e) => setBgColor(e.target.value)}
+                          className="w-10 h-10 rounded border border-slate-700 bg-transparent cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={bgColor}
+                          onChange={(e) => setBgColor(e.target.value)}
+                          className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-slate-300 w-24 focus:ring-1 focus:ring-indigo-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </aside>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const appMountRoot = ReactDOM.createRoot(document.getElementById('nestless-app-root'));
+    appMountRoot.render(<App />);
+  </script>
+</body>
+</html>
